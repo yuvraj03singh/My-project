@@ -220,12 +220,14 @@
   background-color: #2563eb;
   border: none;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: all 0.3s ease;
   margin-top: 0.5rem;
 }
 
 .submit-btn:hover {
   background-color: #1d4ed8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
 }
 
 .btn-icon {
@@ -245,7 +247,12 @@
   font-weight: 500;
   color: #1d4ed8;
   text-decoration: none;
-  transition: color 0.2s ease;
+  transition: all 0.3s ease;
+}
+
+.request-access:hover {
+  color: #1e40af;
+  text-decoration: underline;
 }
 
 .request-access:hover {

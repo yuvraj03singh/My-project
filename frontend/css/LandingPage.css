@@ -78,6 +78,12 @@ body {
   text-decoration: none;
   font-size: 0.9rem;
   font-weight: 500;
+  transition: color 0.3s ease;
+  cursor: pointer;
+}
+
+.nav-signin:hover {
+  color: var(--primary-blue);
 }
 
 .nav-btn {
@@ -88,13 +94,15 @@ body {
   text-decoration: none;
   font-size: 0.9rem;
   font-weight: 600;
-  transition: background-color 0.2s;
+  transition: all 0.3s ease;
   border: none;
   cursor: pointer;
 }
 
 .nav-btn:hover {
   background-color: var(--primary-blue-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 68, 204, 0.3);
 }
 
 /* === Hero Section === */
@@ -148,11 +156,13 @@ body {
   font-weight: 600;
   border: none;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all 0.3s ease;
 }
 
 .btn-primary:hover {
   background-color: var(--primary-blue-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 68, 204, 0.3);
 }
 
 .btn-secondary {
@@ -168,10 +178,13 @@ body {
   align-items: center;
   gap: 0.5rem;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
 }
 
 .btn-secondary:hover {
   background-color: var(--light-gray);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
 .hero-visual {
