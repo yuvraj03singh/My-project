@@ -1,6 +1,6 @@
 import React from 'react';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import '../css/LoginPage.css';
 
 function Header() {
@@ -70,6 +70,13 @@ function Button({ children, type = "button", icon: Icon }) {
 }
 
 export default function LoginPage() {
+  const navigate = useNavigate();
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    navigate('/dashboard');
+  };
+
   return (
     <div className="login-page">
       {/* Outer Card */}
@@ -86,7 +93,7 @@ export default function LoginPage() {
             Access your professional design ecosystem.
           </p>
 
-          <form className="login-form" onSubmit={(e) => e.preventDefault()}>
+          <form className="login-form" onSubmit={handleLogin}>
             
             <Input 
               id="email"
