@@ -49,7 +49,7 @@ export default function Attendance() {
             <div className="nav-section">
               <Link to="/dashboard" className="nav-item">
                 <LayoutDashboard size={20} />
-                <span>Dashboard yuvraj</span>
+                <span>Dashboard</span>
               </Link>
               <Link to="/employees" className="nav-item">
                 <Users size={20} />
