@@ -15,7 +15,7 @@ export default function Attendance() {
         <div className="nav-left">
           <h2 className="brand-logo-top">StudioCore</h2>
           <div className="nav-links">
-            <Link to="/dashboard">Dashboard</Link>
+            <Link to="/dashboard">Dashboard yuvraj</Link>
             <Link to="/employees">Employees</Link>
             <Link to="/attendance" className="active">Attendance</Link>
           </div>
