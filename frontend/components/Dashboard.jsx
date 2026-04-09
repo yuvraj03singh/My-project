@@ -38,10 +38,10 @@ export default function Dashboard() {
             <Calendar size={20} />
             <span>Attendance</span>
           </Link>
-          <a href="#" className="nav-item">
+          <Link to="/reports" className="nav-item">
             <BarChart2 size={20} />
             <span>Reports</span>
-          </a>
+          </Link>
           <a href="#" className="nav-item">
             <Settings size={20} />
             <span>Settings</span>
