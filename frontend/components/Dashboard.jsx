@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Users, Calendar, BarChart2, Settings, 
   HelpCircle, LogOut, Search, Bell, Plus, ChevronDown, 
@@ -8,6 +8,15 @@ import { Link } from 'react-router-dom';
 import '../css/Dashboard.css';
 
 export default function Dashboard() {
+  const [employeeId, setEmployeeId] = useState('');
+
+  useEffect(() => {
+    const storedId = localStorage.getItem('employeeId');
+    if (storedId) {
+      setEmployeeId(storedId);
+    }
+  }, []);
+
   return (
     <div className="dashboard-container">
       {/* Sidebar */}
@@ -90,7 +99,7 @@ export default function Dashboard() {
           <div className="welcome-section">
              <div className="welcome-text">
                 <h1>Workspace Overview</h1>
-                <p>Welcome back, Director. You have <span className="highlight">4 new leave requests</span> and 2 missing logs from yesterday.</p>
+                <p>Welcome back, {employeeId ? <span className="highlight">{employeeId}</span> : "Director"}. You have <span className="highlight">4 new leave requests</span> and 2 missing logs from yesterday.</p>
              </div>
              <div className="welcome-actions">
                <div className="avatar-group">

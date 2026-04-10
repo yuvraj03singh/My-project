@@ -6,6 +6,7 @@ import Dashboard from './components/Dashboard';
 import Attendance from './components/Attendance';
 import Employees from './components/Employees';
 import Reports from './components/Reports';
+import EmployeeDashboard from './components/EmployeeDashboard';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/attendance" element={<Attendance />} />
         <Route path="/employees" element={<Employees />} />
         <Route path="/reports" element={<Reports />} />
+        <Route path="/employee-dashboard" element={<EmployeeDashboard />} />
       </Routes>
     </BrowserRouter>
   );

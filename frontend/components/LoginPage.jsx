@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../css/LoginPage.css';
@@ -15,7 +15,7 @@ function Header() {
   );
 }
 
-function Input({ label, type, placeholder, icon: Icon, id, rightAction }) {
+function Input({ label, type, placeholder, icon: Icon, id, rightAction, value, onChange }) {
   return (
     <div className="input-group">
       <div className="label-container">
@@ -35,6 +35,8 @@ function Input({ label, type, placeholder, icon: Icon, id, rightAction }) {
           type={type} 
           className={`form-input ${type === 'password' ? 'password-input' : ''}`} 
           placeholder={placeholder}
+          value={value}
+          onChange={onChange}
         />
       </div>
     </div>
@@ -71,10 +73,21 @@ function Button({ children, type = "button", icon: Icon }) {
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const [employeeId, setEmployeeId] = useState('');
+  const [password, setPassword] = useState('');
 
   const handleLogin = (e) => {
     e.preventDefault();
-    navigate('/dashboard');
+    if (employeeId) {
+      localStorage.setItem('employeeId', employeeId);
+      if (employeeId.toUpperCase().startsWith('ADM-') || employeeId.toUpperCase().startsWith('SC-')) {
+        navigate('/dashboard');
+      } else {
+        navigate('/employee-dashboard');
+      }
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   return (
@@ -96,11 +109,13 @@ export default function LoginPage() {
           <form className="login-form" onSubmit={handleLogin}>
             
             <Input 
-              id="email"
-              label="Email Address"
-              type="email"
-              placeholder="name@architectural.com"
+              id="employeeId"
+              label="Employee ID"
+              type="text"
+              placeholder="e.g. EMP-001"
               icon={Mail}
+              value={employeeId}
+              onChange={(e) => setEmployeeId(e.target.value)}
             />
 
             <Input 
@@ -109,6 +124,8 @@ export default function LoginPage() {
               type="password"
               placeholder="••••••••"
               icon={Lock}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               rightAction={
                 <a href="#" className="forgot-password">
                   Forgot Password?
