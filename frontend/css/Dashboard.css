@@ -63,6 +63,7 @@ body {
   font-weight: bold;
   font-size: 18px;
   flex-shrink: 0;
+  margin-bottom: 41px;
 }
 
 .workspace-title {

@@ -4,18 +4,59 @@ import {
   HelpCircle, LogOut, Search, Bell, Plus, ChevronDown, 
   MoreHorizontal
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import '../css/Dashboard.css';
 
+const API_URL = 'http://localhost:5000/api';
+
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [employeeId, setEmployeeId] = useState('');
+  const [adminName, setAdminName] = useState('Director');
+  const [totalEmployees, setTotalEmployees] = useState(0);
+  const [recentEmployees, setRecentEmployees] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    const storedId = localStorage.getItem('employeeId');
-    if (storedId) {
-      setEmployeeId(storedId);
+    // Auth guard — redirect if not admin
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('userRole');
+    if (!token || role !== 'admin') {
+      navigate('/login');
+      return;
     }
+
+    const storedId = localStorage.getItem('employeeId');
+    const storedName = localStorage.getItem('adminName');
+    if (storedId) setEmployeeId(storedId);
+    if (storedName) setAdminName(storedName);
+
+    // Fetch real employee count
+    const fetchStats = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/employees`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.data.success) {
+          setTotalEmployees(res.data.total);
+          setRecentEmployees(res.data.data);
+        }
+      } catch (err) {
+        if (err.response?.status === 401) {
+          localStorage.clear();
+          navigate('/login');
+        }
+      }
+    };
+    fetchStats();
   }, []);
+
+  const filteredEmployees = recentEmployees.filter(emp => 
+    emp.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    emp.employeeId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    emp.department.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="dashboard-container">
@@ -58,13 +99,17 @@ export default function Dashboard() {
         </nav>
 
         <div className="sidebar-footer">
-          <button className="new-entry-btn">
+          <button className="new-entry-btn" onClick={() => navigate('/employees')}>
             <Plus size={16} /> New Entry
           </button>
           <a href="#" className="footer-link">
             <HelpCircle size={18} /> Help Center
           </a>
-          <a href="/" className="footer-link logout">
+          <a href="#" className="footer-link logout" onClick={(e) => {
+            e.preventDefault();
+            localStorage.clear();
+            navigate('/login');
+          }}>
             <LogOut size={18} /> Logout
           </a>
         </div>
@@ -83,7 +128,12 @@ export default function Dashboard() {
           <div className="header-actions">
             <div className="search-bar">
               <Search size={16} className="search-icon" />
-              <input type="text" placeholder="Search members..." />
+              <input 
+                type="text" 
+                placeholder="Search new entries..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
             <button className="icon-btn">
               <Bell size={20} />
@@ -99,7 +149,7 @@ export default function Dashboard() {
           <div className="welcome-section">
              <div className="welcome-text">
                 <h1>Workspace Overview</h1>
-                <p>Welcome back, {employeeId ? <span className="highlight">{employeeId}</span> : "Director"}. You have <span className="highlight">4 new leave requests</span> and 2 missing logs from yesterday.</p>
+                <p>Welcome back, <span className="highlight">{adminName}</span> ({employeeId}). Your dashboard is currently monitoring <span className="highlight">{totalEmployees} active entries</span>.</p>
              </div>
              <div className="welcome-actions">
                <div className="avatar-group">
@@ -121,31 +171,31 @@ export default function Dashboard() {
                    <span className="stat-badge positive">+2.5%</span>
                 </div>
                 <div className="stat-title">Total Employees</div>
-                <div className="stat-value">1,248</div>
+                <div className="stat-value">{totalEmployees}</div>
              </div>
              <div className="stat-card">
                 <div className="stat-header">
                    <div className="stat-icon-wrap present-icon"><Users size={20} /></div>
-                   <span className="stat-badge neutral">92% rate</span>
+                   <span className="stat-badge neutral">0% rate</span>
                 </div>
                 <div className="stat-title">Present Today</div>
-                <div className="stat-value">1,152</div>
+                <div className="stat-value">0</div>
              </div>
              <div className="stat-card">
                 <div className="stat-header">
                    <div className="stat-icon-wrap absent-icon"><Users size={20} /></div>
-                   <span className="stat-badge warning">Unexcused</span>
+                   <span className="stat-badge warning">--</span>
                 </div>
                 <div className="stat-title">Absent</div>
-                <div className="stat-value">32</div>
+                <div className="stat-value">0</div>
              </div>
              <div className="stat-card">
                 <div className="stat-header">
                    <div className="stat-icon-wrap leave-icon"><Calendar size={20} /></div>
-                   <span className="stat-badge pending align-right">4 Pending</span>
+                   <span className="stat-badge pending align-right">0 Pending</span>
                 </div>
                 <div className="stat-title">On Leave</div>
-                <div className="stat-value">64</div>
+                <div className="stat-value">0</div>
              </div>
           </div>
 
@@ -158,44 +208,41 @@ export default function Dashboard() {
                      <a href="#" className="view-all">View All Logs</a>
                    </div>
                    <div className="activity-list">
-                      <div className="activity-item">
-                         <img src="https://i.pravatar.cc/150?img=5" alt="Sarah" />
-                         <div className="activity-details">
-                            <h4>Sarah Jenkins</h4>
-                            <p>Logged In &bull; Remote</p>
-                         </div>
-                         <div className="activity-time">
-                            <span>09:42 AM</span>
-                            <div className="status-dot green"></div>
-                         </div>
-                      </div>
-                      <div className="activity-item">
-                         <img src="https://i.pravatar.cc/150?img=8" alt="Michael" />
-                         <div className="activity-details">
-                            <h4>Michael Chen</h4>
-                            <p>Logged In &bull; Studio A</p>
-                         </div>
-                         <div className="activity-time">
-                            <span>09:15 AM</span>
-                            <div className="status-dot green"></div>
-                         </div>
-                      </div>
-                      <div className="activity-item">
-                         <img src="https://i.pravatar.cc/150?img=9" alt="Elena" />
-                         <div className="activity-details">
-                            <h4>Elena Rodriguez</h4>
-                            <p>Logged Out &bull; Lunch Break</p>
-                         </div>
-                         <div className="activity-time">
-                            <span>12:30 PM</span>
-                            <div className="status-dot gray"></div>
-                         </div>
-                      </div>
+                      {filteredEmployees.length > 0 ? (
+                        filteredEmployees.slice(0, 5).map(emp => (
+                          <div className="activity-item" key={emp._id}>
+                             <div className="activity-avatar" style={{
+                                width: '40px', height: '40px', borderRadius: '50%',
+                                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                color: '#fff', fontWeight: 'bold', flexShrink: 0, fontSize: '1.2rem'
+                             }}>
+                               {emp.fullName.charAt(0).toUpperCase()}
+                             </div>
+                             <div className="activity-details">
+                                <h4>{emp.fullName}</h4>
+                                <p>New Entry &bull; {emp.department}</p>
+                             </div>
+                             <div className="activity-time">
+                                <span style={{fontSize: '0.75rem', color: '#9ca3af', marginRight: '6px'}}>{new Date(emp.createdAt).toLocaleDateString()}</span>
+                                <div className="status-dot green"></div>
+                             </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p style={{padding: '1rem', color: '#6b7280', fontSize: '0.9rem'}}>No entries found.</p>
+                      )}
                    </div>
-                   <button className="more-activities-btn">
-                      <MoreHorizontal size={16} />
-                      <span>42 more activities today</span>
-                   </button>
+                   {filteredEmployees.length > 5 ? (
+                     <button className="more-activities-btn" onClick={() => navigate('/employees')}>
+                        <MoreHorizontal size={16} />
+                        <span>{filteredEmployees.length - 5} more entries</span>
+                     </button>
+                   ) : (
+                     <button className="more-activities-btn" onClick={() => navigate('/employees')} style={{visibility: filteredEmployees.length > 0 ? 'visible' : 'hidden'}}>
+                        <span>View all employees</span>
+                     </button>
+                   )}
                 </div>
 
                 {/* Design Dept Peak */}

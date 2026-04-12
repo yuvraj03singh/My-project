@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { Mail, Lock, ArrowRight } from 'lucide-react';
+import { Mail, Lock, ArrowRight, AlertCircle, Loader } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import '../css/LoginPage.css';
+
+const API_URL = 'http://localhost:5000/api';
 
 function Header() {
   return (
@@ -59,14 +62,25 @@ function Checkbox({ id, label }) {
   );
 }
 
-function Button({ children, type = "button", icon: Icon }) {
+function Button({ children, type = "button", icon: Icon, loading = false, disabled = false }) {
   return (
     <button 
       type={type} 
       className="submit-btn"
+      disabled={disabled || loading}
+      style={loading ? { opacity: 0.8, cursor: 'not-allowed' } : {}}
     >
-      {children}
-      {Icon && <Icon className="btn-icon" />}
+      {loading ? (
+        <>
+          <Loader className="btn-icon spinning" size={18} />
+          Signing In...
+        </>
+      ) : (
+        <>
+          {children}
+          {Icon && <Icon className="btn-icon" />}
+        </>
+      )}
     </button>
   );
 }
@@ -75,18 +89,47 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [employeeId, setEmployeeId] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (employeeId) {
-      localStorage.setItem('employeeId', employeeId);
-      if (employeeId.toUpperCase().startsWith('ADM-') || employeeId.toUpperCase().startsWith('SC-')) {
-        navigate('/dashboard');
-      } else {
-        navigate('/employee-dashboard');
+    setError('');
+
+    if (!employeeId || !password) {
+      setError('Please enter both ID and password.');
+      return;
+    }
+
+    const upperID = employeeId.toUpperCase();
+
+    setLoading(true);
+    try {
+      const response = await axios.post(`${API_URL}/auth/login`, {
+        adminId: upperID,
+        password
+      });
+
+      if (response.data.success) {
+        const { token, adminId, name, email, role } = response.data.data;
+        // Store auth data
+        localStorage.setItem('token', token);
+        localStorage.setItem('employeeId', adminId);
+        localStorage.setItem('adminName', name);
+        localStorage.setItem('adminEmail', email);
+        localStorage.setItem('userRole', role);
+        
+        if (role === 'admin') {
+          navigate('/dashboard');
+        } else {
+          navigate('/employee-dashboard');
+        }
       }
-    } else {
-      navigate('/dashboard');
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Login failed. Please check your credentials.';
+      setError(msg);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -106,13 +149,32 @@ export default function LoginPage() {
             Access your professional design ecosystem.
           </p>
 
+          {/* Error Message */}
+          {error && (
+            <div className="login-error" style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              borderRadius: '10px',
+              padding: '12px 16px',
+              marginBottom: '16px',
+              color: '#ef4444',
+              fontSize: '0.9rem'
+            }}>
+              <AlertCircle size={16} />
+              {error}
+            </div>
+          )}
+
           <form className="login-form" onSubmit={handleLogin}>
             
             <Input 
               id="employeeId"
-              label="Employee ID"
+              label="Employee / Admin ID"
               type="text"
-              placeholder="e.g. EMP-001"
+              placeholder="e.g. ADM-001 or EMP-001"
               icon={Mail}
               value={employeeId}
               onChange={(e) => setEmployeeId(e.target.value)}
@@ -138,7 +200,7 @@ export default function LoginPage() {
               label="Remember Me" 
             />
 
-            <Button type="submit" icon={ArrowRight}>
+            <Button type="submit" icon={ArrowRight} loading={loading}>
               Sign In
             </Button>
             
