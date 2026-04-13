@@ -1,64 +1,67 @@
 import React from 'react';
 import { 
   Building, LayoutDashboard, Users, Calendar, BarChart2, FileText,
-  HelpCircle, LogOut, Settings, Bell, Search, Download
+  HelpCircle, LogOut, Settings, Bell, Search, Download, Plus
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import '../css/Reports.css';
 
 export default function Reports() {
+  const navigate = useNavigate();
   return (
     <div className="reports-container">
       {/* Sidebar */}
-      <aside className="reports-sidebar">
-        <div className="sidebar-brand">
-           <h2 className="brand-logo-text-blue">Studio Reports</h2>
+      <aside className="sidebar">
+        <div className="sidebar-header">
+          <h2 className="brand-logo">StudioCore</h2>
         </div>
         
-        <div className="sidebar-workspace-info">
-           <div className="workspace-icon-new">
-             <Building size={20} />
-           </div>
-           <div className="workspace-text-new">
-             <div className="workspace-title-new">Corporate HQ</div>
-             <div className="workspace-subtitle-new">Enterprise Tier</div>
+        <div className="sidebar-workspace">
+           <div className="workspace-icon">A</div>
+           <div className="workspace-text">
+             <div className="workspace-title">Architectural</div>
+             <div className="workspace-subtitle">Workspace</div>
+             <div className="workspace-subsubtitle">MANAGEMENT PORTAL</div>
            </div>
         </div>
 
-        <button className="create-report-btn">
-          Create New Report
-        </button>
-
-        <nav className="reports-nav">
-          <Link to="/dashboard" className="reports-nav-item">
+        <nav className="sidebar-nav">
+          <Link to="/dashboard" className="nav-item">
             <LayoutDashboard size={20} />
             <span>Dashboard</span>
           </Link>
-          <Link to="/employees" className="reports-nav-item">
+          <Link to="/employees" className="nav-item">
             <Users size={20} />
-            <span>Team</span>
+            <span>Employees</span>
           </Link>
-          <Link to="/attendance" className="reports-nav-item">
+          <Link to="/attendance" className="nav-item">
             <Calendar size={20} />
-            <span>Performance</span>
+            <span>Attendance</span>
           </Link>
-          <Link to="/reports" className="reports-nav-item active">
+          <Link to="/reports" className="nav-item active">
             <BarChart2 size={20} />
             <span>Reports</span>
           </Link>
-          <a href="#" className="reports-nav-item">
-            <FileText size={20} />
-            <span>Documents</span>
+          <a href="#" className="nav-item">
+            <Settings size={20} />
+            <span>Settings</span>
           </a>
         </nav>
 
-        <div className="reports-sidebar-footer">
-          <a href="#" className="reports-footer-link">
+        <div className="sidebar-footer">
+          <button className="new-entry-btn" onClick={() => navigate('/employees')}>
+            <Plus size={16} /> New Entry
+          </button>
+          <a href="#" className="footer-link">
             <HelpCircle size={18} /> Help Center
           </a>
-          <Link to="/" className="reports-footer-link reports-logout">
-            <LogOut size={18} /> Sign Out
-          </Link>
+          <a href="#" className="footer-link logout" onClick={(e) => {
+            e.preventDefault();
+            localStorage.clear();
+            navigate('/login');
+          }}>
+            <LogOut size={18} /> Logout
+          </a>
         </div>
       </aside>
 

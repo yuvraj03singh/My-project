@@ -60,8 +60,20 @@ const employeeSchema = new mongoose.Schema({
 // Auto-generate employeeId and hash password before saving
 employeeSchema.pre('save', async function (next) {
   if (!this.employeeId) {
-    const count = await mongoose.model('Employee').countDocuments();
-    this.employeeId = `EMP-${String(count + 1).padStart(4, '0')}`;
+    // Find the employee with the highest employeeId
+    const lastEmployee = await mongoose.model('Employee')
+      .findOne({}, { employeeId: 1 })
+      .sort({ employeeId: -1 });
+
+    let nextNumber = 1;
+    if (lastEmployee && lastEmployee.employeeId) {
+      const lastNumber = parseInt(lastEmployee.employeeId.split('-')[1]);
+      if (!isNaN(lastNumber)) {
+        nextNumber = lastNumber + 1;
+      }
+    }
+    
+    this.employeeId = `EMP-${String(nextNumber).padStart(4, '0')}`;
   }
 
   if (this.isModified('password')) {

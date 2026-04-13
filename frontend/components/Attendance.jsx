@@ -1,13 +1,63 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  LayoutDashboard, Users, Calendar, BarChart2, Settings, 
-  HelpCircle, LogOut, Search, Bell, Download, Filter,
-  ChevronLeft, ChevronRight, AlertTriangle
+  Search, Bell, Download, Filter,
+  ChevronLeft, ChevronRight, AlertTriangle, Loader,
+  LayoutDashboard, Users, Calendar, BarChart2, Settings, HelpCircle, LogOut, Plus
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import api from '../utils/api';
 import '../css/Attendance.css';
 
 export default function Attendance() {
+  const navigate = useNavigate();
+  const [attendance, setAttendance] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    onTimeRate: 0,
+    lateCount: 0,
+    totalCount: 0
+  });
+
+  useEffect(() => {
+    fetchAttendance();
+  }, []);
+
+  const fetchAttendance = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/attendance');
+      if (res.data.success) {
+        setAttendance(res.data.data);
+        calculateStats(res.data.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch attendance:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const calculateStats = (data) => {
+    const total = data.length;
+    if (total === 0) return;
+    const late = data.filter(a => a.status === 'Late').length;
+    const onTime = total - late;
+    setStats({
+      onTimeRate: ((onTime / total) * 100).toFixed(1),
+      lateCount: late,
+      totalCount: total
+    });
+  };
+
+  const formatTime = (dateString) => {
+    if (!dateString) return '-- : --';
+    return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const getInitials = (name) => {
+    return name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : '??';
+  };
+
   return (
     <div className="attendance-layout">
       {/* Top Header */}
@@ -37,49 +87,56 @@ export default function Attendance() {
       <div className="main-container">
         {/* Sidebar */}
         <aside className="sidebar">
+          <div className="sidebar-header">
+            <h2 className="brand-logo">StudioCore</h2>
+          </div>
+          
           <div className="sidebar-workspace">
+             <div className="workspace-icon">A</div>
              <div className="workspace-text">
                <div className="workspace-title">Architectural</div>
                <div className="workspace-subtitle">Workspace</div>
-               <div className="workspace-subsubtitle">Management Portal</div>
+               <div className="workspace-subsubtitle">MANAGEMENT PORTAL</div>
              </div>
           </div>
 
           <nav className="sidebar-nav">
-            <div className="nav-section">
-              <Link to="/dashboard" className="nav-item">
-                <LayoutDashboard size={20} />
-                <span>Dashboard</span>
-              </Link>
-              <Link to="/employees" className="nav-item">
-                <Users size={20} />
-                <span>Employees</span>
-              </Link>
-              <Link to="/attendance" className="nav-item active">
-                <Calendar size={20} />
-                <span>Attendance</span>
-              </Link>
-              <Link to="/reports" className="nav-item">
-                <BarChart2 size={20} />
-                <span>Reports</span>
-              </Link>
-              <a href="#" className="nav-item">
-                <Settings size={20} />
-                <span>Settings</span>
-              </a>
-            </div>
+            <Link to="/dashboard" className="nav-item">
+              <LayoutDashboard size={20} />
+              <span>Dashboard</span>
+            </Link>
+            <Link to="/employees" className="nav-item">
+              <Users size={20} />
+              <span>Employees</span>
+            </Link>
+            <Link to="/attendance" className="nav-item active">
+              <Calendar size={20} />
+              <span>Attendance</span>
+            </Link>
+            <Link to="/reports" className="nav-item">
+              <BarChart2 size={20} />
+              <span>Reports</span>
+            </Link>
+            <a href="#" className="nav-item">
+              <Settings size={20} />
+              <span>Settings</span>
+            </a>
           </nav>
 
           <div className="sidebar-footer">
-            <button className="new-entry-btn">
-              New Entry
+            <button className="new-entry-btn" onClick={() => navigate('/employees')}>
+              <Plus size={16} /> New Entry
             </button>
             <a href="#" className="footer-link">
               <HelpCircle size={18} /> Help Center
             </a>
-            <Link to="/" className="footer-link logout">
+            <a href="#" className="footer-link logout" onClick={(e) => {
+              e.preventDefault();
+              localStorage.clear();
+              navigate('/login');
+            }}>
               <LogOut size={18} /> Logout
-            </Link>
+            </a>
           </div>
         </aside>
 
@@ -99,15 +156,15 @@ export default function Attendance() {
           <div className="quick-stats">
             <div className="stat-box">
               <div className="stat-label">On-Time Presence</div>
-              <div className="stat-value text-blue">94.2%</div>
+              <div className="stat-value text-blue">{stats.onTimeRate}%</div>
             </div>
             <div className="stat-box border-red">
               <div className="stat-label">Late Arrivals</div>
-              <div className="stat-value text-red">12</div>
+              <div className="stat-value text-red">{stats.lateCount}</div>
             </div>
             <div className="stat-box">
-              <div className="stat-label">Total Active Hours</div>
-              <div className="stat-value text-blue">1,240</div>
+              <div className="stat-label">Total Logs</div>
+              <div className="stat-value text-blue">{stats.totalCount}</div>
             </div>
           </div>
 
@@ -123,7 +180,7 @@ export default function Attendance() {
             <div className="filter-group">
               <label>SELECT DATE</label>
               <div className="input-with-icon">
-                 <input type="date" defaultValue="2023-10-24" />
+                 <input type="date" />
               </div>
             </div>
             <div className="filter-group">
@@ -144,152 +201,70 @@ export default function Attendance() {
 
           {/* Table */}
           <div className="table-card">
-            <table className="attendance-table">
-              <thead>
-                <tr>
-                  <th>EMPLOYEE NAME</th>
-                  <th>ID</th>
-                  <th>LOGIN TIME</th>
-                  <th>LOGOUT TIME</th>
-                  <th>TOTAL HOURS</th>
-                  <th>STATUS</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>
-                    <div className="employee-info">
-                      <div className="avatar initials bg-blue-light">JD</div>
-                      <div>
-                        <div className="emp-name">Julianne Devis</div>
-                        <div className="emp-role">Lead Architect</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="emp-id">#SC-2041</td>
-                  <td>08:52 AM</td>
-                  <td>05:30 PM</td>
-                  <td>8h 38m</td>
-                  <td><span className="badge badge-present">PRESENT</span></td>
-                </tr>
-                <tr>
-                  <td>
-                    <div className="employee-info">
-                      <div className="avatar initials bg-gray-light">MW</div>
-                      <div>
-                        <div className="emp-name">Marcus Wright</div>
-                        <div className="emp-role">Senior Developer</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="emp-id">#SC-1988</td>
-                  <td>
-                    <div className="highlight-danger">
-                      <AlertTriangle size={14} /> 09:45 AM
-                    </div>
-                  </td>
-                  <td>06:15 PM</td>
-                  <td>8h 30m</td>
-                  <td><span className="badge badge-late">LATE</span></td>
-                </tr>
-                <tr>
-                  <td>
-                    <div className="employee-info">
-                      <div className="avatar initials bg-muted-light">SL</div>
-                      <div>
-                        <div className="emp-name">Sarah Linn</div>
-                        <div className="emp-role">Project Manager</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="emp-id">#SC-2112</td>
-                  <td className="text-muted">-- : --</td>
-                  <td className="text-muted">-- : --</td>
-                  <td>0h 0m</td>
-                  <td><span className="badge badge-absent">ABSENT</span></td>
-                </tr>
-                <tr>
-                  <td>
-                    <div className="employee-info">
-                      <div className="avatar initials bg-orange-light">AB</div>
-                      <div>
-                        <div className="emp-name">Alex Bennett</div>
-                        <div className="emp-role">Interior Designer</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="emp-id">#SC-2205</td>
-                  <td>08:58 AM</td>
-                  <td>
-                    <div className="highlight-warning">
-                      03:30 PM
-                    </div>
-                  </td>
-                  <td>6h 32m</td>
-                  <td><span className="badge badge-present">PRESENT</span></td>
-                </tr>
-                <tr>
-                  <td>
-                    <div className="employee-info">
-                      <div className="avatar initials bg-blue-light">TO</div>
-                      <div>
-                        <div className="emp-name">Talia Ortiz</div>
-                        <div className="emp-role">3D Visualizer</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="emp-id">#SC-2311</td>
-                  <td>09:05 AM</td>
-                  <td>06:05 PM</td>
-                  <td>9h 00m</td>
-                  <td><span className="badge badge-present">PRESENT</span></td>
-                </tr>
-              </tbody>
-            </table>
+            {loading ? (
+              <div className="loading-state">
+                <Loader className="spinning" />
+                <p>Loading attendance records...</p>
+              </div>
+            ) : (
+              <table className="attendance-table">
+                <thead>
+                  <tr>
+                    <th>EMPLOYEE NAME</th>
+                    <th>ID</th>
+                    <th>LOGIN TIME</th>
+                    <th>LOGOUT TIME</th>
+                    <th>STATUS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {attendance.length > 0 ? (
+                    attendance.map((log) => (
+                      <tr key={log._id}>
+                        <td>
+                          <div className="employee-info">
+                            <div className="avatar initials bg-blue-light">
+                              {getInitials(log.employee?.fullName)}
+                            </div>
+                            <div>
+                              <div className="emp-name">{log.employee?.fullName || 'Unknown'}</div>
+                              <div className="emp-role">{log.employee?.role || 'Associate'}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="emp-id">{log.employee?.employeeId || 'N/A'}</td>
+                        <td>
+                          <div className={log.status === 'Late' ? 'highlight-danger' : ''}>
+                            {log.status === 'Late' && <AlertTriangle size={14} style={{ marginRight: '4px' }} />}
+                            {formatTime(log.loginTime)}
+                          </div>
+                        </td>
+                        <td className="text-muted">{formatTime(log.logoutTime)}</td>
+                        <td>
+                          <span className={`badge badge-${log.status.toLowerCase()}`}>
+                            {log.status.toUpperCase()}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="5" className="no-data">No attendance records found for today.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
             
             <div className="pagination">
-              <span className="page-info">Showing 1 to 5 of 24 employees</span>
+              <span className="page-info">Showing {attendance.length} entries</span>
               <div className="page-controls">
                 <button className="page-btn"><ChevronLeft size={16} /></button>
                 <button className="page-btn active">1</button>
-                <button className="page-btn">2</button>
-                <button className="page-btn">3</button>
                 <button className="page-btn"><ChevronRight size={16} /></button>
               </div>
             </div>
           </div>
-
-          {/* Bottom Section */}
-          <div className="bottom-widgets">
-            <div className="trend-widget">
-              <div className="widget-header">
-                <h3>Attendance Trend (Past 7 Days)</h3>
-                <div className="legend">
-                  <span className="legend-item"><span className="dot dot-present"></span> Present</span>
-                  <span className="legend-item"><span className="dot dot-late"></span> Late</span>
-                </div>
-              </div>
-              <div className="trend-chart">
-                <div className="bar full"></div>
-                <div className="bar full"></div>
-                <div className="bar full"></div>
-                <div className="bar full"></div>
-                <div className="bar full"></div>
-                <div className="bar full"></div>
-                <div className="bar mixed">
-                  <div className="mixed-top"></div>
-                  <div className="mixed-bottom"></div>
-                </div>
-              </div>
-            </div>
-
-            <div className="policy-widget">
-               <span className="policy-tag">POLICY CHECK</span>
-               <h4>3 consecutive lates trigger a manager notification automatically.</h4>
-               <a href="#">Review Policy Docs</a>
-            </div>
-          </div>
-
         </main>
       </div>
     </div>

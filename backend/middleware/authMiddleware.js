@@ -1,7 +1,8 @@
 const jwt = require('jsonwebtoken');
 const Admin = require('../models/Admin');
+const Employee = require('../models/Employee');
 
-// Protect routes — verify JWT token
+// Protect routes — verify JWT token (Supports both Admins and Employees)
 const protect = async (req, res, next) => {
   let token;
 
@@ -16,16 +17,23 @@ const protect = async (req, res, next) => {
       // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      // Attach admin user to request (exclude password)
-      req.admin = await Admin.findById(decoded.id).select('-password');
+      // Try finding the user in Admin collection first
+      let user = await Admin.findById(decoded.id).select('-password');
+      
+      // If not an admin, try finding in Employee collection
+      if (!user) {
+        user = await Employee.findById(decoded.id).select('-password');
+      }
 
-      if (!req.admin) {
+      if (!user) {
         return res.status(401).json({
           success: false,
-          message: 'Not authorized — admin not found'
+          message: 'Not authorized — user not found'
         });
       }
 
+      // Attach user object to request
+      req.user = user;
       next();
     } catch (error) {
       console.error('Auth middleware error:', error.message);
@@ -46,7 +54,7 @@ const protect = async (req, res, next) => {
 
 // Admin-only access check
 const adminOnly = (req, res, next) => {
-  if (req.admin && req.admin.role === 'admin') {
+  if (req.user && req.user.role === 'admin') {
     next();
   } else {
     return res.status(403).json({

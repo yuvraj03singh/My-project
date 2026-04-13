@@ -229,6 +229,39 @@
   color: #fbbf24;
 }
 
+.clock-in-btn-header {
+  background-color: var(--nexus-secondary);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.2s, background 0.2s;
+  font-size: 0.9rem;
+}
+
+.clock-in-btn-header:hover {
+  background-color: var(--nexus-primary);
+  transform: translateY(-2px);
+}
+
+.clocked-in-badge {
+  background-color: var(--nexus-blue-light);
+  color: var(--nexus-secondary);
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  border: 1px solid var(--nexus-secondary);
+}
+
 /* Dashboard Content Grid */
 .emp-content {
   flex: 1;
@@ -345,11 +378,31 @@
   height: 8px;
   background: var(--nexus-green);
   border-radius: 50%;
+  box-shadow: 0 0 10px var(--nexus-green);
+}
+.dot-offline {
+  width: 8px;
+  height: 8px;
+  background: var(--nexus-text-muted);
+  border-radius: 50%;
 }
 .session-timer {
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--nexus-secondary);
+}
+.start-session-btn {
+  background-color: var(--nexus-secondary);
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .end-session-btn {
   border: 1px solid var(--nexus-red);
@@ -363,6 +416,10 @@
   display: flex;
   align-items: center;
   gap: 6px;
+}
+.end-session-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Small Cards */

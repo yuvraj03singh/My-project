@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const Admin = require('../models/Admin');
 const Employee = require('../models/Employee');
+const Attendance = require('../models/Attendance');
 
 // Generate JWT token
 const generateToken = (id) => {
@@ -49,6 +50,8 @@ const loginAdmin = async (req, res) => {
         message: 'Invalid ID or password'
       });
     }
+
+    // --- UNIFIED LOGIN RESPONSE ---
 
     // Generate token and return data
     const token = generateToken(user._id);

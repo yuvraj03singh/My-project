@@ -2,26 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, Calendar, User, FileText, Settings, 
   HelpCircle, LogOut, Plus, Sun, Plane, MessageSquare, BarChart2,
-  ChevronRight, Circle
+  ChevronRight, Circle, Clock, CheckCircle
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import api from '../utils/api';
 import '../css/EmployeeDashboard.css';
 
 export default function EmployeeDashboard() {
   const navigate = useNavigate();
   const [employeeId, setEmployeeId] = useState('');
-  const [sessionTime, setSessionTime] = useState('00:34:57');
+  const [employeeName, setEmployeeName] = useState('Employee');
+  const [sessionTime, setSessionTime] = useState('00:00:00');
+  const [isClockedIn, setIsClockedIn] = useState(false);
+  const [clockInTime, setClockInTime] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const storedId = localStorage.getItem('employeeId');
-    if (storedId) {
-      setEmployeeId(storedId);
-    } else {
-      // default/fallback
-      setEmployeeId('EMP-1002');
-    }
+    const storedName = localStorage.getItem('employeeName') || localStorage.getItem('name');
+    
+    if (storedId) setEmployeeId(storedId);
+    if (storedName) setEmployeeName(storedName);
 
-    // A simple mock timer for effect
+    checkAttendanceStatus();
+
+    // Session timer (only runs if clocked in)
     const interval = setInterval(() => {
       setSessionTime(prev => {
         let [hrs, mins, secs] = prev.split(':').map(Number);
@@ -31,11 +36,52 @@ export default function EmployeeDashboard() {
         return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
       });
     }, 1000);
+    
     return () => clearInterval(interval);
   }, []);
 
+  const checkAttendanceStatus = async () => {
+    try {
+      const res = await api.get('/attendance/me');
+      if (res.data.success && res.data.data.length > 0) {
+        const today = new Date().toDateString();
+        const todayRecord = res.data.data.find(record => new Date(record.date).toDateString() === today);
+        
+        if (todayRecord) {
+          setIsClockedIn(true);
+          setClockInTime(new Date(todayRecord.loginTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+          
+          // Calculate session time since login
+          const login = new Date(todayRecord.loginTime);
+          const diff = Math.floor((new Date() - login) / 1000);
+          const h = Math.floor(diff / 3600);
+          const m = Math.floor((diff % 3600) / 60);
+          const s = diff % 60;
+          setSessionTime(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
+        }
+      }
+    } catch (err) {
+      console.error('Error checking attendance:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClockIn = async () => {
+    try {
+      const res = await api.post('/attendance/clock-in');
+      if (res.data.success) {
+        setIsClockedIn(true);
+        setClockInTime(new Date(res.data.data.loginTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+        alert('Clocked in successfully!');
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to clock in');
+    }
+  };
+
   const handleLogout = () => {
-    localStorage.removeItem('employeeId');
+    localStorage.clear();
     navigate('/login');
   };
 
@@ -43,224 +89,224 @@ export default function EmployeeDashboard() {
     <div className="emp-dashboard-wrapper">
       <div className="emp-dashboard-container">
         {/* Sidebar */}
-      <aside className="emp-sidebar">
-        <div className="emp-brand">
-          <div className="emp-top-nav-links">
-            <a href="#">Nexus Workspace</a>
-            <a href="#">Directory</a>
-            <a href="#">Resources</a>
-          </div>
-        </div>
-
-        <div className="emp-user-card">
-          <div className="emp-avatar">
-            {employeeId ? employeeId.substring(4, 5) || 'A' : 'A'}
-          </div>
-          <div className="emp-user-info">
-            <div className="name">Alex Rivers</div>
-            <div className="role">Senior Architect - {employeeId}</div>
-          </div>
-        </div>
-
-        <nav className="emp-nav-menu">
-          <a href="#" className="emp-nav-item active">
-            <LayoutDashboard size={18} />
-            My Dashboard
-          </a>
-          <a href="#" className="emp-nav-item">
-            <Calendar size={18} />
-            My Attendance
-          </a>
-          <a href="#" className="emp-nav-item">
-            <User size={18} />
-            My Profile
-          </a>
-          <a href="#" className="emp-nav-item">
-            <FileText size={18} />
-            Paystubs
-          </a>
-
-          <div className="emp-menu-divider"></div>
-        </nav>
-
-        <button className="emp-btn-primary">
-          <Plus size={18} /> New Request
-        </button>
-
-        <div className="emp-nav-footer">
-          <a href="#" className="emp-nav-item">
-            <HelpCircle size={18} />
-            Support
-          </a>
-          <a href="#" className="emp-nav-item emp-logout" onClick={(e) => { e.preventDefault(); handleLogout(); }}>
-            <LogOut size={18} />
-            Log Out
-          </a>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="emp-main">
-        <header className="emp-header">
-          <div>
-            <div className="emp-date">MONDAY, OCT 23</div>
-            <h1 className="emp-greeting">Good Morning, Alex.</h1>
-            <p className="emp-sub-greeting">You've clocked in <strong>4 hours</strong> today. Your focus session is looking productive.</p>
-          </div>
-          <div className="emp-weather">
-            <Sun className="emp-weather-icon" size={20} fill="#fbbf24" stroke="#fbbf24" />
-            72°F Sunny
-          </div>
-        </header>
-
-        <div className="emp-content">
-          <div className="emp-grid">
-            
-            <div className="emp-grid-main">
-              {/* Attendance Rate */}
-              <div className="emp-card attendance-card">
-                <div className="card-title">
-                  Attendance Rate <BarChart2 size={16} />
-                </div>
-                <div className="attendance-value">96%</div>
-                <div className="attendance-month">MONTH TO DATE</div>
-              </div>
-
-              {/* Total Hours */}
-              <div className="emp-card hours-card">
-                <div className="card-title">
-                  Total Hours This Week <Settings size={16} />
-                </div>
-                <div className="hours-value">32 <span>/ 40</span></div>
-                
-                <div className="session-info">
-                  <div>
-                    <div className="session-status">
-                      <div className="dot-live"></div> CURRENT SESSION
-                    </div>
-                    <div className="session-timer">{sessionTime}</div>
-                  </div>
-                  <div>
-                    <span style={{fontSize: '0.9rem', color: 'var(--nexus-text-muted)', display: 'block', marginBottom: '8px'}}>Started at 08:30 AM</span>
-                    <button className="end-session-btn">
-                      <Circle size={12} fill="var(--nexus-red)"/> End Session
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Remaining Leave */}
-              <div className="emp-card small-stat-card">
-                <div className="small-stat-icon icon-orange">
-                  <Plane size={24} />
-                </div>
-                <div className="small-stat-info">
-                  <div className="label">Remaining Leave</div>
-                  <div className="val">5 Days</div>
-                </div>
-              </div>
-
-              {/* Next Review */}
-              <div className="emp-card small-stat-card">
-                <div className="small-stat-icon icon-purple">
-                  <MessageSquare size={24} />
-                </div>
-                <div className="small-stat-info">
-                  <div className="label">Next Review</div>
-                  <div className="val">Dec 15</div>
-                </div>
-              </div>
-
-              {/* Punctuality Metric */}
-              <div className="emp-card punctuality-card">
-                <div className="card-title">
-                  Punctuality Metric 
-                  <span style={{fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px'}}><div className="dot-live" style={{background: 'var(--nexus-secondary)'}}></div> Consistency</span>
-                </div>
-                <div className="chart-container">
-                  {[40, 50, 45, 60, 30, 80, 50, 48, 55, 60].map((h, i) => (
-                    <div key={i} className={`chart-bar ${i === 5 ? 'active' : ''}`} style={{height: `${h}%`}}></div>
-                  ))}
-                </div>
-                <div className="chart-labels">
-                  <span>10 DAYS AGO</span>
-                  <span>TODAY</span>
-                </div>
-              </div>
+        <aside className="emp-sidebar">
+          <div className="emp-brand">
+            <div className="emp-top-nav-links">
+              <a href="#">Nexus Workspace</a>
+              <a href="#">Directory</a>
+              <a href="#">Resources</a>
             </div>
-
-            <div className="emp-grid-sidebar">
-              {/* Activity Log */}
-              <div className="emp-card">
-                <div className="card-title">Activity Log</div>
-                <div className="activity-list">
-                  <div className="activity-item">
-                    <div className="activity-icon completed"><ChevronRight size={14}/></div>
-                    <div className="activity-details">
-                      <h5>Login</h5>
-                      <p>08:30 AM</p>
-                    </div>
-                  </div>
-                  <div className="activity-item">
-                    <div className="activity-icon current"><Settings size={12}/></div>
-                    <div className="activity-details">
-                      <h5>Break</h5>
-                      <p>12:00 PM</p>
-                    </div>
-                  </div>
-                  <div className="activity-item" style={{opacity: 0.5}}>
-                    <div className="activity-icon pending"><Circle size={10} fill="var(--nexus-text-muted)"/></div>
-                    <div className="activity-details">
-                      <h5>Logout</h5>
-                      <p>--:--</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Upcoming */}
-              <div className="emp-card">
-                <div className="card-title" style={{marginBottom: '20px'}}>
-                  Upcoming <a href="#" style={{fontSize: '0.9rem', color: 'var(--nexus-secondary)', textDecoration: 'none'}}>VIEW CALENDAR</a>
-                </div>
-                
-                <div className="event-item">
-                  <div className="event-date-box">
-                    <span className="event-month">OCT</span>
-                    <span className="event-day">23</span>
-                  </div>
-                  <div className="event-info">
-                    <h5>Design Sync</h5>
-                    <p>02:00 PM - 03:00 PM</p>
-                  </div>
-                  <ChevronRight size={16} color="var(--nexus-text-muted)" style={{marginLeft: 'auto'}}/>
-                </div>
-
-                <div className="event-item">
-                  <div className="event-date-box">
-                    <span className="event-month">OCT</span>
-                    <span className="event-day">24</span>
-                  </div>
-                  <div className="event-info">
-                    <h5>Project Review</h5>
-                    <p>10:30 AM - 11:30 AM</p>
-                  </div>
-                  <ChevronRight size={16} color="var(--nexus-text-muted)" style={{marginLeft: 'auto'}}/>
-                </div>
-              </div>
-
-              {/* Workspace Insight */}
-              <div className="insight-card">
-                <span className="insight-tag">WORKSPACE INSIGHT</span>
-                <h3>Design Studio v2</h3>
-                <p>The new architectural templates are now available in your shared directory.</p>
-                <a href="#">Read Documentation</a>
-              </div>
-            </div>
-
           </div>
-        </div>
-      </main>
+
+          <div className="emp-user-card">
+            <div className="emp-avatar">
+              {employeeName.charAt(0).toUpperCase()}
+            </div>
+            <div className="emp-user-info">
+              <div className="name">{employeeName}</div>
+              <div className="role">Employee - {employeeId}</div>
+            </div>
+          </div>
+
+          <nav className="emp-nav-menu">
+            <a href="#" className="emp-nav-item active">
+              <LayoutDashboard size={18} />
+              My Dashboard
+            </a>
+            <a href="#" className="emp-nav-item">
+              <Calendar size={18} />
+              My Attendance
+            </a>
+            <a href="#" className="emp-nav-item">
+              <User size={18} />
+              My Profile
+            </a>
+            <a href="#" className="emp-nav-item">
+              <FileText size={18} />
+              Paystubs
+            </a>
+
+            <div className="emp-menu-divider"></div>
+          </nav>
+
+          <button className="emp-btn-primary">
+            <Plus size={18} /> New Request
+          </button>
+
+          <div className="emp-nav-footer">
+            <a href="#" className="emp-nav-item">
+              <HelpCircle size={18} />
+              Support
+            </a>
+            <a href="#" className="emp-nav-item emp-logout" onClick={(e) => { e.preventDefault(); handleLogout(); }}>
+              <LogOut size={18} />
+              Log Out
+            </a>
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <main className="emp-main">
+          <header className="emp-header">
+            <div>
+              <div className="emp-date">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }).toUpperCase()}</div>
+              <h1 className="emp-greeting">Good Morning, {employeeName.split(' ')[0]}.</h1>
+              <p className="emp-sub-greeting">
+                {isClockedIn 
+                  ? `You clocked in at ${clockInTime}. Have a productive day!` 
+                  : "You haven't clocked in yet today. Ready to start?"}
+              </p>
+            </div>
+            <div className="emp-weather">
+              {isClockedIn ? (
+                <div className="clocked-in-badge">
+                  <CheckCircle size={16} /> CLOCKED IN
+                </div>
+              ) : (
+                <button className="clock-in-btn-header" onClick={handleClockIn}>
+                   <Clock size={18} /> CLOCK IN NOW
+                </button>
+              )}
+            </div>
+          </header>
+
+          <div className="emp-content">
+            <div className="emp-grid">
+              
+              <div className="emp-grid-main">
+                {/* Attendance Rate */}
+                <div className="emp-card attendance-card">
+                  <div className="card-title">
+                    Attendance Rate <BarChart2 size={16} />
+                  </div>
+                  <div className="attendance-value">96%</div>
+                  <div className="attendance-month">MONTH TO DATE</div>
+                </div>
+
+                {/* Total Hours */}
+                <div className="emp-card hours-card">
+                  <div className="card-title">
+                    Session Status <Settings size={16} />
+                  </div>
+                  <div className="hours-value">{isClockedIn ? 'Active' : 'Offline'}</div>
+                  
+                  <div className="session-info">
+                    <div>
+                      <div className="session-status">
+                        <div className={isClockedIn ? "dot-live" : "dot-offline"}></div> {isClockedIn ? "CURRENT SESSION" : "PAUSED"}
+                      </div>
+                      <div className="session-timer">{sessionTime}</div>
+                    </div>
+                    <div>
+                      <span style={{fontSize: '0.9rem', color: 'var(--nexus-text-muted)', display: 'block', marginBottom: '8px'}}>
+                        {isClockedIn ? `Started at ${clockInTime}` : 'Not started'}
+                      </span>
+                      {!isClockedIn ? (
+                         <button className="start-session-btn" onClick={handleClockIn}>
+                            <Clock size={16} /> Start Session
+                         </button>
+                      ) : (
+                        <button className="end-session-btn" disabled>
+                          <Circle size={12} fill="var(--nexus-red)"/> End Session
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Remaining Leave */}
+                <div className="emp-card small-stat-card">
+                  <div className="small-stat-icon icon-orange">
+                    <Plane size={24} />
+                  </div>
+                  <div className="small-stat-info">
+                    <div className="label">Remaining Leave</div>
+                    <div className="val">5 Days</div>
+                  </div>
+                </div>
+
+                {/* Next Review */}
+                <div className="emp-card small-stat-card">
+                  <div className="small-stat-icon icon-purple">
+                    <MessageSquare size={24} />
+                  </div>
+                  <div className="small-stat-info">
+                    <div className="label">Next Review</div>
+                    <div className="val">Dec 15</div>
+                  </div>
+                </div>
+
+                {/* Punctuality Metric */}
+                <div className="emp-card punctuality-card">
+                  <div className="card-title">
+                    Punctuality Metric 
+                    <span style={{fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px'}}><div className="dot-live" style={{background: 'var(--nexus-secondary)'}}></div> Consistency</span>
+                  </div>
+                  <div className="chart-container">
+                    {[40, 50, 45, 60, 30, 80, 50, 48, 55, 60].map((h, i) => (
+                      <div key={i} className={`chart-bar ${i === 5 ? 'active' : ''}`} style={{height: `${h}%`}}></div>
+                    ))}
+                  </div>
+                  <div className="chart-labels">
+                    <span>10 DAYS AGO</span>
+                    <span>TODAY</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="emp-grid-sidebar">
+                {/* Activity Log */}
+                <div className="emp-card">
+                  <div className="card-title">Activity Log</div>
+                  <div className="activity-list">
+                    <div className="activity-item">
+                      <div className={`activity-icon ${isClockedIn ? 'completed' : ''}`}><ChevronRight size={14}/></div>
+                      <div className="activity-details">
+                        <h5>Login/Clock In</h5>
+                        <p>{isClockedIn ? clockInTime : '--:--'}</p>
+                      </div>
+                    </div>
+                    <div className="activity-item">
+                      <div className="activity-icon current"><Settings size={12}/></div>
+                      <div className="activity-details">
+                        <h5>Status</h5>
+                        <p>{isClockedIn ? 'Active' : 'Offline'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Upcoming */}
+                <div className="emp-card">
+                  <div className="card-title" style={{marginBottom: '20px'}}>
+                    Upcoming <a href="#" style={{fontSize: '0.9rem', color: 'var(--nexus-secondary)', textDecoration: 'none'}}>VIEW CALENDAR</a>
+                  </div>
+                  
+                  <div className="event-item">
+                    <div className="event-date-box">
+                      <span className="event-month">OCT</span>
+                      <span className="event-day">23</span>
+                    </div>
+                    <div className="event-info">
+                      <h5>Design Sync</h5>
+                      <p>02:00 PM - 03:00 PM</p>
+                    </div>
+                    <ChevronRight size={16} color="var(--nexus-text-muted)" style={{marginLeft: 'auto'}}/>
+                  </div>
+                </div>
+
+                {/* Workspace Insight */}
+                <div className="insight-card">
+                  <span className="insight-tag">WORKSPACE INSIGHT</span>
+                  <h3>Design Studio v2</h3>
+                  <p>The new architectural templates are now available in your shared directory.</p>
+                  <a href="#">Read Documentation</a>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </main>
       </div>
     </div>
   );

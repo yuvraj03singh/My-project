@@ -40,6 +40,23 @@ const createEmployee = async (req, res) => {
     });
   } catch (error) {
     console.error('Create employee error:', error);
+    
+    // Check for specific Mongoose errors
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'An employee with this ID or email already exists'
+      });
+    }
+
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(val => val.message);
+      return res.status(400).json({
+        success: false,
+        message: messages.join(', ')
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: 'Server error while creating employee'
