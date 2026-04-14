@@ -17,6 +17,9 @@ export default function Attendance() {
     lateCount: 0,
     totalCount: 0
   });
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const adminName = localStorage.getItem('adminName') || 'Director';
+  const employeeId = localStorage.getItem('employeeId') || '';
 
   useEffect(() => {
     fetchAttendance();
@@ -78,8 +81,26 @@ export default function Attendance() {
           <button className="icon-btn">
             <Bell size={20} />
           </button>
-          <div className="user-profile">
-            <img src="https://i.pravatar.cc/150?img=47" alt="Profile" />
+          <div className="user-profile-container">
+            <div className="user-profile" onClick={() => setShowProfileMenu(!showProfileMenu)}>
+              <img src="https://i.pravatar.cc/150?img=47" alt="Profile" />
+            </div>
+            {showProfileMenu && (
+              <div className="profile-dropdown">
+                <div className="dropdown-info">
+                  <p className="user-name">{adminName}</p>
+                  <p className="user-id">{employeeId}</p>
+                </div>
+                <div className="dropdown-divider"></div>
+                <button className="dropdown-item logout-btn" onClick={() => {
+                  localStorage.clear();
+                  navigate('/login');
+                }}>
+                  <LogOut size={16} />
+                  <span>Logout</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>

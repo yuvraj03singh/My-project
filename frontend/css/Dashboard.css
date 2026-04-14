@@ -235,13 +235,7 @@ body {
   justify-content: center;
 }
 
-.user-profile img {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid white;
-}
+/* Redundant profile styles removed (moved to global index.css) */
 
 /* Dashboard Body */
 .dashboard-content {

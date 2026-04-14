@@ -16,7 +16,10 @@ export default function Dashboard() {
   const [adminName, setAdminName] = useState('Director');
   const [totalEmployees, setTotalEmployees] = useState(0);
   const [recentEmployees, setRecentEmployees] = useState([]);
+  const [stats, setStats] = useState({ present: 0, absent: 0, onLeave: 0 });
+  const [todayActivity, setTodayActivity] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   useEffect(() => {
     // Auth guard — redirect if not admin
@@ -32,17 +35,51 @@ export default function Dashboard() {
     if (storedId) setEmployeeId(storedId);
     if (storedName) setAdminName(storedName);
 
-    // Fetch real employee count
+    // Fetch real stats
     const fetchStats = async () => {
       try {
-        const res = await axios.get(`${API_URL}/employees`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (res.data.success) {
-          setTotalEmployees(res.data.total);
-          setRecentEmployees(res.data.data);
-        }
+        const token = localStorage.getItem('token');
+        const headers = { headers: { Authorization: `Bearer ${token}` } };
+
+        // Fetch employees
+        axios.get(`${API_URL}/employees`, headers)
+          .then(res => {
+            if (res.data.success) {
+              setTotalEmployees(res.data.total || 0);
+              setRecentEmployees(res.data.data || []);
+            }
+          })
+          .catch(err => console.error('Employees fetch error:', err));
+
+        // Fetch dashboard stats
+        axios.get(`${API_URL}/attendance/stats`, headers)
+          .then(res => {
+            if (res.data.success) {
+              setStats(res.data.data);
+              if (res.data.data.total !== undefined) {
+                setTotalEmployees(res.data.data.total);
+              }
+            }
+          })
+          .catch(err => console.error('Stats fetch error:', err));
+
+        // Fetch attendance logs for activity
+        axios.get(`${API_URL}/attendance`, headers)
+          .then(res => {
+            if (res.data.success) {
+              const todayStr = new Date().toDateString();
+              const todaysLogs = res.data.data.filter(log => {
+                if (!log.date) return false;
+                // Using toDateString() for reliable local date comparison
+                return new Date(log.date).toDateString() === todayStr;
+              });
+              setTodayActivity(todaysLogs);
+            }
+          })
+          .catch(err => console.error('Attendance fetch error:', err));
+
       } catch (err) {
+        console.error('Fetch error:', err);
         if (err.response?.status === 401) {
           localStorage.clear();
           navigate('/login');
@@ -138,8 +175,26 @@ export default function Dashboard() {
             <button className="icon-btn">
               <Bell size={20} />
             </button>
-            <div className="user-profile">
-               <img src="https://i.pravatar.cc/150?img=47" alt="Profile" />
+            <div className="user-profile-container">
+              <div className="user-profile" onClick={() => setShowProfileMenu(!showProfileMenu)}>
+                 <img src="https://i.pravatar.cc/150?img=47" alt="Profile" />
+              </div>
+              {showProfileMenu && (
+                <div className="profile-dropdown">
+                  <div className="dropdown-info">
+                    <p className="user-name">{adminName}</p>
+                    <p className="user-id">{employeeId}</p>
+                  </div>
+                  <div className="dropdown-divider"></div>
+                  <button className="dropdown-item logout-btn" onClick={() => {
+                    localStorage.clear();
+                    navigate('/login');
+                  }}>
+                    <LogOut size={16} />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </header>
@@ -152,12 +207,6 @@ export default function Dashboard() {
                 <p>Welcome back, <span className="highlight">{adminName}</span> ({employeeId}). Your dashboard is currently monitoring <span className="highlight">{totalEmployees} active entries</span>.</p>
              </div>
              <div className="welcome-actions">
-               <div className="avatar-group">
-                 <img src="https://i.pravatar.cc/150?img=11" alt="avatar" />
-                 <img src="https://i.pravatar.cc/150?img=12" alt="avatar" />
-                 <img src="https://i.pravatar.cc/150?img=13" alt="avatar" />
-                 <span className="more-avatars">+12</span>
-               </div>
                <button className="filter-btn">
                  Filters <ChevronDown size={14} />
                </button>
@@ -168,7 +217,6 @@ export default function Dashboard() {
              <div className="stat-card">
                 <div className="stat-header">
                    <div className="stat-icon-wrap users-icon"><Users size={20} /></div>
-                   <span className="stat-badge positive">+2.5%</span>
                 </div>
                 <div className="stat-title">Total Employees</div>
                 <div className="stat-value">{totalEmployees}</div>
@@ -176,26 +224,23 @@ export default function Dashboard() {
              <div className="stat-card">
                 <div className="stat-header">
                    <div className="stat-icon-wrap present-icon"><Users size={20} /></div>
-                   <span className="stat-badge neutral">0% rate</span>
                 </div>
                 <div className="stat-title">Present Today</div>
-                <div className="stat-value">0</div>
+                <div className="stat-value">{stats.present}</div>
              </div>
              <div className="stat-card">
                 <div className="stat-header">
                    <div className="stat-icon-wrap absent-icon"><Users size={20} /></div>
-                   <span className="stat-badge warning">--</span>
                 </div>
                 <div className="stat-title">Absent</div>
-                <div className="stat-value">0</div>
+                <div className="stat-value">{stats.absent}</div>
              </div>
              <div className="stat-card">
                 <div className="stat-header">
                    <div className="stat-icon-wrap leave-icon"><Calendar size={20} /></div>
-                   <span className="stat-badge pending align-right">0 Pending</span>
                 </div>
                 <div className="stat-title">On Leave</div>
-                <div className="stat-value">0</div>
+                <div className="stat-value">{stats.onLeave}</div>
              </div>
           </div>
 
@@ -208,31 +253,34 @@ export default function Dashboard() {
                      <a href="#" className="view-all">View All Logs</a>
                    </div>
                    <div className="activity-list">
-                      {filteredEmployees.length > 0 ? (
-                        filteredEmployees.slice(0, 5).map(emp => (
-                          <div className="activity-item" key={emp._id}>
-                             <div className="activity-avatar" style={{
-                                width: '40px', height: '40px', borderRadius: '50%',
-                                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                color: '#fff', fontWeight: 'bold', flexShrink: 0, fontSize: '1.2rem'
-                             }}>
-                               {emp.fullName.charAt(0).toUpperCase()}
-                             </div>
-                             <div className="activity-details">
-                                <h4>{emp.fullName}</h4>
-                                <p>New Entry &bull; {emp.department}</p>
-                             </div>
-                             <div className="activity-time">
-                                <span style={{fontSize: '0.75rem', color: '#9ca3af', marginRight: '6px'}}>{new Date(emp.createdAt).toLocaleDateString()}</span>
-                                <div className="status-dot green"></div>
-                             </div>
-                          </div>
-                        ))
-                      ) : (
-                        <p style={{padding: '1rem', color: '#6b7280', fontSize: '0.9rem'}}>No entries found.</p>
-                      )}
-                   </div>
+                       {todayActivity.length > 0 ? (
+                         todayActivity.slice(0, 5).map(log => (
+                           <div className="activity-item" key={log._id}>
+                              <div className="activity-avatar" style={{
+                                 width: '40px', height: '40px', borderRadius: '50%',
+                                 background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                 color: '#fff', fontWeight: 'bold', flexShrink: 0, fontSize: '1.2rem'
+                              }}>
+                                {log.employee?.fullName?.charAt(0).toUpperCase() || '?'}
+                              </div>
+                              <div className="activity-details">
+                                 <h4>{log.employee?.fullName || 'Unknown'}</h4>
+                                 <p>{log.status} &bull; {log.employee?.department || 'General'}</p>
+                              </div>
+                              <div className="activity-time">
+                                 <span style={{fontSize: '0.75rem', color: '#9ca3af', marginRight: '6px'}}>
+                                   {new Date(log.loginTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                 </span>
+                                 <div className={`status-dot ${log.status === 'Present' ? 'green' : 'orange'}`}></div>
+                              </div>
+                           </div>
+                         ))
+                       ) : (
+                         <p style={{padding: '1rem', color: '#6b7280', fontSize: '0.9rem'}}>No login activity for today.</p>
+                       )}
+                    </div>
+
                    {filteredEmployees.length > 5 ? (
                      <button className="more-activities-btn" onClick={() => navigate('/employees')}>
                         <MoreHorizontal size={16} />
@@ -259,63 +307,12 @@ export default function Dashboard() {
              </div>
 
              <div className="grid-right">
-                {/* Department Health */}
+                {/* Cards removed as requested to show only existing data */}
                 <div className="health-card">
-                   <h3>DEPARTMENT HEALTH</h3>
-                   <div className="health-item">
-                      <div className="health-labels">
-                         <span>Architectural</span>
-                         <span>12/12</span>
-                      </div>
-                      <div className="progress-bar"><div className="fill" style={{width: '100%'}}></div></div>
-                   </div>
-                   <div className="health-item">
-                      <div className="health-labels">
-                         <span>Engineering</span>
-                         <span>48/52</span>
-                      </div>
-                      <div className="progress-bar"><div className="fill" style={{width: '92%'}}></div></div>
-                   </div>
-                   <div className="health-item">
-                      <div className="health-labels">
-                         <span>Interior Design</span>
-                         <span>22/30</span>
-                      </div>
-                      <div className="progress-bar"><div className="fill" style={{width: '73%'}}></div></div>
-                   </div>
-                </div>
-
-                {/* Upcoming Office Events */}
-                <div className="events-card">
-                   <h3>UPCOMING OFFICE EVENTS</h3>
-                   <div className="event-item">
-                      <div className="event-date">
-                         <span className="day">24</span>
-                         <span className="month">SEP</span>
-                      </div>
-                      <div className="event-details">
-                         <h4>Studio Townhall</h4>
-                         <p>10:00 AM &bull; Main Atrium</p>
-                      </div>
-                   </div>
-                   <div className="event-item">
-                      <div className="event-date">
-                         <span className="day">28</span>
-                         <span className="month">SEP</span>
-                      </div>
-                      <div className="event-details">
-                         <h4>Monthly Review</h4>
-                         <p>02:00 PM &bull; Zoom</p>
-                      </div>
-                   </div>
-                </div>
-
-                {/* Workspace View */}
-                <div className="workspace-view-card">
-                   <div className="video-overlay">
-                      <span>WORKSPACE VIEW</span>
-                      <h4>Studio 4-B Security Feed</h4>
-                   </div>
+                   <h3>SYSTEM INSIGHT</h3>
+                   <p style={{fontSize: '0.9rem', color: 'var(--text-secondary)'}}>
+                     No additional alerts or health reports at this time.
+                   </p>
                 </div>
              </div>
           </div>

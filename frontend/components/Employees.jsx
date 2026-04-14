@@ -22,6 +22,9 @@ export default function Employees() {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const adminName = localStorage.getItem('adminName') || 'Director';
+  const employeeId = localStorage.getItem('employeeId') || '';
 
   // Get token from localStorage
   const getAuthHeaders = () => {
@@ -144,8 +147,26 @@ export default function Employees() {
           <button className="icon-btn">
             <Bell size={18} />
           </button>
-          <div className="user-profile">
-            <img src="https://i.pravatar.cc/150?img=47" alt="Profile" />
+          <div className="user-profile-container">
+            <div className="user-profile" onClick={() => setShowProfileMenu(!showProfileMenu)}>
+              <img src="https://i.pravatar.cc/150?img=47" alt="Profile" />
+            </div>
+            {showProfileMenu && (
+              <div className="profile-dropdown">
+                <div className="dropdown-info">
+                  <p className="user-name">{adminName}</p>
+                  <p className="user-id">{employeeId}</p>
+                </div>
+                <div className="dropdown-divider"></div>
+                <button className="dropdown-item logout-btn" onClick={() => {
+                  localStorage.clear();
+                  navigate('/login');
+                }}>
+                  <LogOut size={16} />
+                  <span>Logout</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -249,6 +270,7 @@ export default function Employees() {
                      <label>Professional Role</label>
                      <div className="select-wrapper">
                         <select name="role" value={formData.role} onChange={handleChange}>
+                        
                            <option>Senior Architect</option>
                            <option>Lead Designer</option>
                            <option>Project Manager</option>
@@ -262,6 +284,7 @@ export default function Employees() {
                      <label>Department</label>
                      <div className="select-wrapper">
                         <select name="department" value={formData.department} onChange={handleChange}>
+                        
                            <option>Design & Concept</option>
                            <option>Engineering</option>
                            <option>Interior Architecture</option>

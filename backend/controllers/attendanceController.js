@@ -88,8 +88,40 @@ const clockIn = async (req, res) => {
   }
 };
 
+// @desc    Get dashboard stats
+// @route   GET /api/attendance/stats
+// @access  Admin
+const getDashboardStats = async (req, res) => {
+  try {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const totalEmployees = await Employee.countDocuments({ status: 'active' });
+    const presentToday = await Attendance.countDocuments({
+      date: today
+    });
+
+    res.json({
+      success: true,
+      data: {
+        total: totalEmployees,
+        present: presentToday,
+        absent: Math.max(0, totalEmployees - presentToday),
+        onLeave: 0
+      }
+    });
+  } catch (error) {
+    console.error('Stats error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching stats'
+    });
+  }
+};
+
 module.exports = {
   getAllAttendance,
   getMyAttendance,
-  clockIn
+  clockIn,
+  getDashboardStats
 };

@@ -8,6 +8,9 @@ import '../css/Reports.css';
 
 export default function Reports() {
   const navigate = useNavigate();
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const adminName = localStorage.getItem('adminName') || 'Director';
+  const employeeId = localStorage.getItem('employeeId') || '';
   return (
     <div className="reports-container">
       {/* Sidebar */}
@@ -82,8 +85,26 @@ export default function Reports() {
             <button className="reports-icon-btn">
               <Settings size={20} />
             </button>
-            <div className="reports-user-profile">
-               <img src="https://i.pravatar.cc/150?img=47" alt="Profile" />
+            <div className="reports-user-profile-container">
+               <div className="reports-user-profile" onClick={() => setShowProfileMenu(!showProfileMenu)}>
+                  <img src="https://i.pravatar.cc/150?img=47" alt="Profile" />
+               </div>
+               {showProfileMenu && (
+                 <div className="profile-dropdown">
+                   <div className="dropdown-info">
+                     <p className="user-name">{adminName}</p>
+                     <p className="user-id">{employeeId}</p>
+                   </div>
+                   <div className="dropdown-divider"></div>
+                   <button className="dropdown-item logout-btn" onClick={() => {
+                     localStorage.clear();
+                     navigate('/login');
+                   }}>
+                     <LogOut size={16} />
+                     <span>Logout</span>
+                   </button>
+                 </div>
+               )}
             </div>
           </div>
         </header>
