@@ -71,6 +71,7 @@ export default function Attendance() {
             <Link to="/dashboard">Dashboard</Link>
             <Link to="/employees">Employees</Link>
             <Link to="/attendance" className="active">Attendance</Link>
+            <Link to="/reports">Reports</Link>
           </div>
         </div>
         <div className="nav-right">

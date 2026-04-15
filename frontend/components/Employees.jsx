@@ -138,6 +138,7 @@ export default function Employees() {
             <Link to="/dashboard">Dashboard</Link>
             <Link to="/employees" className="active">Employees</Link>
             <Link to="/attendance">Attendance</Link>
+            <Link to="/reports">Reports</Link>
           </div>
         </div>
         <div className="nav-right">

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Building, LayoutDashboard, Users, Calendar, BarChart2, FileText,
   HelpCircle, LogOut, Settings, Bell, Search, Download, Plus
@@ -11,6 +11,17 @@ export default function Reports() {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const adminName = localStorage.getItem('adminName') || 'Director';
   const employeeId = localStorage.getItem('employeeId') || '';
+
+  useEffect(() => {
+    // Auth guard — redirect if not admin
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('userRole');
+    if (!token || role !== 'admin') {
+      navigate('/login');
+      return;
+    }
+  }, [navigate]);
+
   return (
     <div className="reports-container">
       {/* Sidebar */}
