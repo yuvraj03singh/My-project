@@ -115,7 +115,8 @@ export default function LoginPage() {
         // Store auth data
         localStorage.setItem('token', token);
         localStorage.setItem('employeeId', adminId);
-        localStorage.setItem('adminName', name);
+        localStorage.setItem('employeeName', name);
+        localStorage.setItem('name', name);
         localStorage.setItem('adminEmail', email);
         localStorage.setItem('userRole', role);
         

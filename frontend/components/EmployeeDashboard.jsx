@@ -11,7 +11,7 @@ import '../css/EmployeeDashboard.css';
 export default function EmployeeDashboard() {
   const navigate = useNavigate();
   const [employeeId, setEmployeeId] = useState('');
-  const [employeeName, setEmployeeName] = useState('Employee');
+  const [employeeName, setEmployeeName] = useState('');
   const [sessionTime, setSessionTime] = useState('00:00:00');
   const [isClockedIn, setIsClockedIn] = useState(false);
   const [clockInTime, setClockInTime] = useState(null);
@@ -28,8 +28,12 @@ export default function EmployeeDashboard() {
     if (storedName) setEmployeeName(storedName);
 
     checkAttendanceStatus();
+  }, []);
 
-    // Session timer (only runs if clocked in)
+  // Session timer - only runs when clocked in
+  useEffect(() => {
+    if (!isClockedIn) return;
+
     const interval = setInterval(() => {
       setSessionTime(prev => {
         let [hrs, mins, secs] = prev.split(':').map(Number);
@@ -41,7 +45,7 @@ export default function EmployeeDashboard() {
     }, 1000);
     
     return () => clearInterval(interval);
-  }, []);
+  }, [isClockedIn]);
 
   const checkAttendanceStatus = async () => {
     try {
@@ -51,16 +55,38 @@ export default function EmployeeDashboard() {
         const todayRecord = res.data.data.find(record => new Date(record.date).toDateString() === today);
         
         if (todayRecord) {
-          setIsClockedIn(true);
           setClockInTime(new Date(todayRecord.loginTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
           
-          // Calculate session time since login
-          const login = new Date(todayRecord.loginTime);
-          const diff = Math.floor((new Date() - login) / 1000);
-          const h = Math.floor(diff / 3600);
-          const m = Math.floor((diff % 3600) / 60);
-          const s = diff % 60;
-          setSessionTime(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
+          // Check if already clocked out
+          if (todayRecord.logoutTime) {
+            setIsClockedIn(false);
+            setSessionTime('00:00:00');
+            setClockOutTime(new Date(todayRecord.logoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+            
+            // Set logout status
+            if (todayRecord.logoutStatus) {
+              setLogoutStatus(todayRecord.logoutStatus);
+            }
+            if (todayRecord.overtimeHours) {
+              setOvertimeHours(todayRecord.overtimeHours);
+            }
+          } else {
+            // Still clocked in - calculate session time
+            setIsClockedIn(true);
+            const login = new Date(todayRecord.loginTime);
+            const diff = Math.floor((new Date() - login) / 1000);
+            const h = Math.floor(diff / 3600);
+            const m = Math.floor((diff % 3600) / 60);
+            const s = diff % 60;
+            setSessionTime(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
+          }
+        } else {
+          // No record for today - user hasn't clocked in
+          setIsClockedIn(false);
+          setSessionTime('00:00:00');
+          setClockInTime(null);
+          setClockOutTime(null);
+          setLogoutStatus(null);
         }
       }
     } catch (err) {
@@ -75,7 +101,10 @@ export default function EmployeeDashboard() {
       const res = await api.post('/attendance/clock-in');
       if (res.data.success) {
         setIsClockedIn(true);
+        setSessionTime('00:00:00'); // Start with fresh timer
         setClockInTime(new Date(res.data.data.loginTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+        setClockOutTime(null); // Reset logout time
+        setLogoutStatus(null); // Reset logout status
         alert('Clocked in successfully!');
       }
     } catch (err) {
@@ -88,6 +117,7 @@ export default function EmployeeDashboard() {
       const res = await api.post('/attendance/clock-out');
       if (res.data.success) {
         setIsClockedIn(false);
+        setSessionTime('00:00:00'); // Reset timer when clocking out
         const logoutTime = new Date(res.data.data.logoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         setClockOutTime(logoutTime);
         
@@ -101,7 +131,7 @@ export default function EmployeeDashboard() {
           setLogoutStatus('overtime');
         }
         
-        alert(`Clocked out successfully! Status: ${res.data.data.status}`);
+        alert(`Clocked out successfully! Status: ${res.data.data.logoutStatus}`);
         
         // Refresh attendance data
         setTimeout(() => checkAttendanceStatus(), 500);
@@ -131,10 +161,10 @@ export default function EmployeeDashboard() {
 
           <div className="emp-user-card">
             <div className="emp-avatar">
-              {employeeName.charAt(0).toUpperCase()}
+              {(employeeName || 'E').charAt(0).toUpperCase()}
             </div>
             <div className="emp-user-info">
-              <div className="name">{employeeName}</div>
+              <div className="name">{employeeName || 'Employee'}</div>
               <div className="role">Employee - {employeeId}</div>
             </div>
           </div>
@@ -181,7 +211,7 @@ export default function EmployeeDashboard() {
           <header className="emp-header">
             <div>
               <div className="emp-date">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }).toUpperCase()}</div>
-              <h1 className="emp-greeting">Good Morning, {employeeName.split(' ')[0]}.</h1>
+              <h1 className="emp-greeting">Good Morning, {employeeName ? employeeName.split(' ')[0] : 'there'}.</h1>
               <p className="emp-sub-greeting">
                 {isClockedIn 
                   ? `You clocked in at ${clockInTime}. Have a productive day!` 
