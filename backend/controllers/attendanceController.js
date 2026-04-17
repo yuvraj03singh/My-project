@@ -88,6 +88,69 @@ const clockIn = async (req, res) => {
   }
 };
 
+// @desc    Manual Clock-Out
+// @route   POST /api/attendance/clock-out
+// @access  Employee
+const clockOut = async (req, res) => {
+  try {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    // Find today's attendance record
+    const attendanceRecord = await Attendance.findOne({
+      employee: req.user._id,
+      date: today
+    });
+
+    if (!attendanceRecord) {
+      return res.status(400).json({
+        success: false,
+        message: 'No clock-in record found for today. Please clock in first.'
+      });
+    }
+
+    if (attendanceRecord.logoutTime) {
+      return res.status(400).json({
+        success: false,
+        message: 'You have already clocked out for today.'
+      });
+    }
+
+    // Set logout time
+    attendanceRecord.logoutTime = now;
+
+    // Determine logout status (based on 5 PM = 17:00)
+    const logoutHour = now.getHours();
+    const logoutMinute = now.getMinutes();
+    const workEndTime = 17; // 5 PM
+
+    if (logoutHour < workEndTime) {
+      attendanceRecord.logoutStatus = 'early';
+      attendanceRecord.overtimeHours = 0;
+    } else if (logoutHour === workEndTime && logoutMinute <= 0) {
+      attendanceRecord.logoutStatus = 'ontime';
+      attendanceRecord.overtimeHours = 0;
+    } else {
+      attendanceRecord.logoutStatus = 'overtime';
+      const overtimeMinutes = (logoutHour - workEndTime) * 60 + logoutMinute;
+      attendanceRecord.overtimeHours = Math.round(overtimeMinutes / 60 * 10) / 10; // Round to nearest 0.1 hour
+    }
+
+    await attendanceRecord.save();
+
+    res.json({
+      success: true,
+      data: attendanceRecord
+    });
+  } catch (error) {
+    console.error('Clock-out error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during clock-out'
+    });
+  }
+};
+
 // @desc    Get dashboard stats
 // @route   GET /api/attendance/stats
 // @access  Admin
@@ -123,5 +186,6 @@ module.exports = {
   getAllAttendance,
   getMyAttendance,
   clockIn,
+  clockOut,
   getDashboardStats
 };

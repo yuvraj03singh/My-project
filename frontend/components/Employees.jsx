@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Bell, Upload, Shield, Sparkles, Network, Loader, AlertCircle, CheckCircle, Trash2, Eye, X } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Search, Bell, Upload, Shield, Sparkles, Network, Loader, AlertCircle, CheckCircle, Trash2, Eye, X, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import '../css/Employees.css';
 
@@ -129,24 +129,25 @@ export default function Employees() {
   };
 
   return (
-    <div className="employees-layout">
-      {/* Top Header */}
-      <header className="top-nav">
-        <div className="nav-left">
-          <h2 className="brand-logo-top">StudioCore</h2>
-          <div className="nav-links">
-            <Link to="/dashboard">Dashboard</Link>
-            <Link to="/employees" className="active">Employees</Link>
-            <Link to="/attendance">Attendance</Link>
-            <Link to="/reports">Reports</Link>
-          </div>
+    <>
+      {/* Header */}
+      <header className="top-header">
+        <div className="header-tabs">
+          <a href="#" className="tab active">Overview</a>
+          <a href="#" className="tab">Directory</a>
+          <a href="#" className="tab">Payroll</a>
         </div>
-        <div className="nav-right">
+        
+        <div className="header-actions">
+          <div className="search-bar">
+            <Search size={16} className="search-icon" />
+            <input 
+              type="text" 
+              placeholder="Search new entries..." 
+            />
+          </div>
           <button className="icon-btn">
-             <Search size={18} />
-          </button>
-          <button className="icon-btn">
-            <Bell size={18} />
+            <Bell size={20} />
           </button>
           <div className="user-profile-container">
             <div className="user-profile" onClick={() => setShowProfileMenu(!showProfileMenu)}>
@@ -172,8 +173,8 @@ export default function Employees() {
         </div>
       </header>
 
-      {/* Main Content Centered */}
-      <main className="employees-content">
+      {/* Main Content */}
+      <div className="dashboard-content">
          <div className="form-header">
             <h1 className="page-title">New Studio Associate</h1>
             <p className="page-subtitle">Onboard a new member to the Architectural Workspace digital ecosystem.</p>
@@ -584,8 +585,8 @@ export default function Employees() {
                <p>Roles define permission levels for architectural blueprints and sensitive project data.</p>
             </div>
          </div>
-      </main>
-    </div>
+      </div>
+    </>
   );
 }
 

@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Building, LayoutDashboard, Users, Calendar, BarChart2, FileText,
-  HelpCircle, LogOut, Settings, Bell, Search, Download, Plus
+  Bell, LogOut, Search, Download, FileText
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import '../css/Reports.css';
 
 export default function Reports() {
@@ -23,103 +22,52 @@ export default function Reports() {
   }, [navigate]);
 
   return (
-    <div className="reports-container">
-      {/* Sidebar */}
-      <aside className="sidebar">
-        <div className="sidebar-header">
-          <h2 className="brand-logo">StudioCore</h2>
+    <>
+      {/* Header */}
+      <header className="top-header">
+        <div className="header-tabs">
+          <a href="#" className="tab active">Overview</a>
+          <a href="#" className="tab">Directory</a>
+          <a href="#" className="tab">Payroll</a>
         </div>
         
-        <div className="sidebar-workspace">
-           <div className="workspace-icon">A</div>
-           <div className="workspace-text">
-             <div className="workspace-title">Architectural</div>
-             <div className="workspace-subtitle">Workspace</div>
-             <div className="workspace-subsubtitle">MANAGEMENT PORTAL</div>
-           </div>
-        </div>
-
-        <nav className="sidebar-nav">
-          <Link to="/dashboard" className="nav-item">
-            <LayoutDashboard size={20} />
-            <span>Dashboard</span>
-          </Link>
-          <Link to="/employees" className="nav-item">
-            <Users size={20} />
-            <span>Employees</span>
-          </Link>
-          <Link to="/attendance" className="nav-item">
-            <Calendar size={20} />
-            <span>Attendance</span>
-          </Link>
-          <Link to="/reports" className="nav-item active">
-            <BarChart2 size={20} />
-            <span>Reports</span>
-          </Link>
-          <a href="#" className="nav-item">
-            <Settings size={20} />
-            <span>Settings</span>
-          </a>
-        </nav>
-
-        <div className="sidebar-footer">
-          <button className="new-entry-btn" onClick={() => navigate('/employees')}>
-            <Plus size={16} /> New Entry
+        <div className="header-actions">
+          <div className="search-bar">
+            <Search size={16} className="search-icon" />
+            <input 
+              type="text" 
+              placeholder="Search new entries..." 
+            />
+          </div>
+          <button className="icon-btn">
+            <Bell size={20} />
           </button>
-          <a href="#" className="footer-link">
-            <HelpCircle size={18} /> Help Center
-          </a>
-          <a href="#" className="footer-link logout" onClick={(e) => {
-            e.preventDefault();
-            localStorage.clear();
-            navigate('/login');
-          }}>
-            <LogOut size={18} /> Logout
-          </a>
+          <div className="user-profile-container">
+            <div className="user-profile" onClick={() => setShowProfileMenu(!showProfileMenu)}>
+              <img src="https://i.pravatar.cc/150?img=47" alt="Profile" />
+            </div>
+            {showProfileMenu && (
+              <div className="profile-dropdown">
+                <div className="dropdown-info">
+                  <p className="user-name">{adminName}</p>
+                  <p className="user-id">{employeeId}</p>
+                </div>
+                <div className="dropdown-divider"></div>
+                <button className="dropdown-item logout-btn" onClick={() => {
+                  localStorage.clear();
+                  navigate('/login');
+                }}>
+                  <LogOut size={16} />
+                  <span>Logout</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-      </aside>
+      </header>
 
       {/* Main Content */}
-      <main className="reports-main-content">
-        {/* Header */}
-        <header className="reports-top-header">
-          <div className="reports-header-tabs">
-            <a href="#" className="reports-tab">Analytics</a>
-            <a href="#" className="reports-tab">Workforce</a>
-            <a href="#" className="reports-tab">Planning</a>
-          </div>
-          
-          <div className="reports-header-actions">
-            <button className="reports-icon-btn">
-              <Bell size={20} />
-            </button>
-            <button className="reports-icon-btn">
-              <Settings size={20} />
-            </button>
-            <div className="reports-user-profile-container">
-               <div className="reports-user-profile" onClick={() => setShowProfileMenu(!showProfileMenu)}>
-                  <img src="https://i.pravatar.cc/150?img=47" alt="Profile" />
-               </div>
-               {showProfileMenu && (
-                 <div className="profile-dropdown">
-                   <div className="dropdown-info">
-                     <p className="user-name">{adminName}</p>
-                     <p className="user-id">{employeeId}</p>
-                   </div>
-                   <div className="dropdown-divider"></div>
-                   <button className="dropdown-item logout-btn" onClick={() => {
-                     localStorage.clear();
-                     navigate('/login');
-                   }}>
-                     <LogOut size={16} />
-                     <span>Logout</span>
-                   </button>
-                 </div>
-               )}
-            </div>
-          </div>
-        </header>
-
+      <div className="dashboard-content">
         {/* Page Content */}
         <div className="reports-page-content">
            <div className="reports-title-section">
@@ -301,7 +249,7 @@ export default function Reports() {
               </div>
            </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </>
   );
 }

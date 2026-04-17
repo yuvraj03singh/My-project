@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getAllAttendance, getMyAttendance, clockIn, getDashboardStats } = require('../controllers/attendanceController');
+const { getAllAttendance, getMyAttendance, clockIn, clockOut, getDashboardStats } = require('../controllers/attendanceController');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
 
 // @route   GET /api/attendance
@@ -18,5 +18,9 @@ router.get('/stats', protect, adminOnly, getDashboardStats);
 // @route   POST /api/attendance/clock-in
 // @desc    Employee clock-in
 router.post('/clock-in', protect, clockIn);
+
+// @route   POST /api/attendance/clock-out
+// @desc    Employee clock-out
+router.post('/clock-out', protect, clockOut);
 
 module.exports = router;

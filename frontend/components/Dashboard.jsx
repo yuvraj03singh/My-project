@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  LayoutDashboard, Users, Calendar, BarChart2, Settings, 
-  HelpCircle, LogOut, Search, Bell, Plus, ChevronDown, 
-  MoreHorizontal
+  Users, Calendar, Search, Bell, ChevronDown, 
+  MoreHorizontal, LogOut
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import '../css/Dashboard.css';
 
@@ -96,64 +95,8 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="dashboard-container">
-      {/* Sidebar */}
-      <aside className="sidebar">
-        <div className="sidebar-header">
-          <h2 className="brand-logo">StudioCore</h2>
-        </div>
-        
-        <div className="sidebar-workspace">
-           <div className="workspace-icon">A</div>
-           <div className="workspace-text">
-             <div className="workspace-title">Architectural</div>
-             <div className="workspace-subtitle">Workspace</div>
-             <div className="workspace-subsubtitle">MANAGEMENT PORTAL</div>
-           </div>
-        </div>
-
-        <nav className="sidebar-nav">
-          <Link to="/dashboard" className="nav-item active">
-            <LayoutDashboard size={20} />
-            <span>Dashboard</span>
-          </Link>
-          <Link to="/employees" className="nav-item">
-            <Users size={20} />
-            <span>Employees</span>
-          </Link>
-          <Link to="/attendance" className="nav-item">
-            <Calendar size={20} />
-            <span>Attendance</span>
-          </Link>
-          <Link to="/reports" className="nav-item">
-            <BarChart2 size={20} />
-            <span>Reports</span>
-          </Link>
-          <a href="#" className="nav-item">
-            <Settings size={20} />
-            <span>Settings</span>
-          </a>
-        </nav>
-
-        <div className="sidebar-footer">
-          <button className="new-entry-btn" onClick={() => navigate('/employees')}>
-            <Plus size={16} /> New Entry
-          </button>
-          <a href="#" className="footer-link">
-            <HelpCircle size={18} /> Help Center
-          </a>
-          <a href="#" className="footer-link logout" onClick={(e) => {
-            e.preventDefault();
-            localStorage.clear();
-            navigate('/login');
-          }}>
-            <LogOut size={18} /> Logout
-          </a>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="main-content">
+    <>
+      {/* Header */}
         {/* Header */}
         <header className="top-header">
           <div className="header-tabs">
@@ -317,7 +260,6 @@ export default function Dashboard() {
              </div>
           </div>
         </div>
-      </main>
-    </div>
-  );
-}
+      </>
+    );
+  }

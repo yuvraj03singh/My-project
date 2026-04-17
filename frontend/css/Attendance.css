@@ -430,6 +430,10 @@ body {
 .badge-present { background-color: #d1fae5; color: #047857; }
 .badge-late { background-color: #fef08a; color: #a16207; }
 .badge-absent { background-color: #ffe4e6; color: #be123c; }
+.badge-early { background-color: #fee2e2; color: #dc2626; font-weight: 600; }
+.badge-overtime { background-color: #dbeafe; color: #0284c7; font-weight: 600; }
+.badge-ontime { background-color: #dcfce7; color: #16a34a; font-weight: 600; }
+.badge-pending { background-color: #f3f4f6; color: #6b7280; }
 
 /* Pagination */
 .pagination {

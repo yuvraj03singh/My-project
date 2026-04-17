@@ -15,6 +15,9 @@ export default function EmployeeDashboard() {
   const [sessionTime, setSessionTime] = useState('00:00:00');
   const [isClockedIn, setIsClockedIn] = useState(false);
   const [clockInTime, setClockInTime] = useState(null);
+  const [clockOutTime, setClockOutTime] = useState(null);
+  const [logoutStatus, setLogoutStatus] = useState(null); // 'early' or 'overtime'
+  const [overtimeHours, setOvertimeHours] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -77,6 +80,34 @@ export default function EmployeeDashboard() {
       }
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to clock in');
+    }
+  };
+
+  const handleClockOut = async () => {
+    try {
+      const res = await api.post('/attendance/clock-out');
+      if (res.data.success) {
+        setIsClockedIn(false);
+        const logoutTime = new Date(res.data.data.logoutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        setClockOutTime(logoutTime);
+        
+        // Determine if early logout or overtime
+        const logoutHour = new Date(res.data.data.logoutTime).getHours();
+        if (logoutHour < 17) {
+          setLogoutStatus('early');
+        } else {
+          const overtime = logoutHour - 17;
+          setOvertimeHours(overtime);
+          setLogoutStatus('overtime');
+        }
+        
+        alert(`Clocked out successfully! Status: ${res.data.data.status}`);
+        
+        // Refresh attendance data
+        setTimeout(() => checkAttendanceStatus(), 500);
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to clock out');
     }
   };
 
@@ -206,7 +237,7 @@ export default function EmployeeDashboard() {
                             <Clock size={16} /> Start Session
                          </button>
                       ) : (
-                        <button className="end-session-btn" disabled>
+                        <button className="end-session-btn" onClick={handleClockOut}>
                           <Circle size={12} fill="var(--nexus-red)"/> End Session
                         </button>
                       )}
@@ -264,6 +295,16 @@ export default function EmployeeDashboard() {
                       <div className="activity-details">
                         <h5>Login/Clock In</h5>
                         <p>{isClockedIn ? clockInTime : '--:--'}</p>
+                      </div>
+                    </div>
+                    <div className="activity-item">
+                      <div className={`activity-icon ${clockOutTime ? 'completed' : 'pending'}`}><LogOut size={12}/></div>
+                      <div className="activity-details">
+                        <h5>Logout/Clock Out</h5>
+                        <p>{clockOutTime || '--:--'}</p>
+                        {logoutStatus && <p style={{fontSize: '0.8rem', color: logoutStatus === 'early' ? 'var(--nexus-red)' : 'var(--nexus-green)', marginTop: '4px', fontWeight: '600'}}>
+                          {logoutStatus === 'early' ? '⏪ Early Logout' : `⏱️ Overtime: ${overtimeHours}h`}
+                        </p>}
                       </div>
                     </div>
                     <div className="activity-item">

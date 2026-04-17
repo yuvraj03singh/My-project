@@ -17,6 +17,15 @@ const attendanceSchema = new mongoose.Schema({
   logoutTime: {
     type: Date
   },
+  logoutStatus: {
+    type: String,
+    enum: [null, 'early', 'ontime', 'overtime'],
+    default: null
+  },
+  overtimeHours: {
+    type: Number,
+    default: 0
+  },
   status: {
     type: String,
     enum: ['Present', 'Late', 'Absent'],
