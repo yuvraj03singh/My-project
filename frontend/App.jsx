@@ -7,6 +7,7 @@ import Attendance from './components/Attendance';
 import Employees from './components/Employees';
 import Reports from './components/Reports';
 import EmployeeDashboard from './components/EmployeeDashboard';
+import EmployeeAttendance from './components/EmployeeAttendance';
 import Layout from './components/Layout';
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
         <Route path="/employees" element={<Layout><Employees /></Layout>} />
         <Route path="/reports" element={<Layout><Reports /></Layout>} />
         <Route path="/employee-dashboard" element={<EmployeeDashboard />} />
+        <Route path="/my-attendance" element={<EmployeeAttendance />} />
       </Routes>
     </BrowserRouter>
   );

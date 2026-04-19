@@ -182,10 +182,210 @@ const getDashboardStats = async (req, res) => {
   }
 };
 
+// @desc    Get employee attendance statistics with percentage
+// @route   GET /api/attendance/stats/me
+// @access  Employee
+const getMyAttendanceStats = async (req, res) => {
+  try {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+
+    // Get first day of current month
+    const monthStart = new Date(currentYear, currentMonth, 1);
+    // Get today - set to start of day
+    const today = new Date(currentYear, currentMonth, now.getDate());
+    // Get tomorrow - to include all of today's records
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // Fetch all attendance records for the employee in current month
+    const attendanceRecords = await Attendance.find({
+      employee: req.user._id,
+      date: {
+        $gte: monthStart,
+        $lt: tomorrow
+      }
+    }).sort({ date: 1 });
+
+    // Calculate working days (Mon-Fri only, no weekends)
+    let workingDays = 0;
+    let currentDate = new Date(monthStart);
+
+    while (currentDate <= today) {
+      const dayOfWeek = currentDate.getDay();
+      // 0 = Sunday, 6 = Saturday
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        workingDays++;
+      }
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    // Count present days (including Late status)
+    const presentDays = attendanceRecords.filter(
+      record => record.status === 'Present' || record.status === 'Late'
+    ).length;
+
+    // Count absent days
+    const absentDays = attendanceRecords.filter(
+      record => record.status === 'Absent'
+    ).length;
+
+    // Count late arrivals
+    const lateCount = attendanceRecords.filter(
+      record => record.status === 'Late'
+    ).length;
+
+    // Calculate attendance percentage
+    const attendancePercentage = workingDays > 0 
+      ? ((presentDays / workingDays) * 100).toFixed(2)
+      : 0;
+
+    // Create attendance map for calendar
+    const attendanceMap = {};
+    attendanceRecords.forEach(record => {
+      const dateKey = new Date(record.date).toISOString().split('T')[0];
+      attendanceMap[dateKey] = {
+        status: record.status,
+        loginTime: record.loginTime,
+        logoutTime: record.logoutTime,
+        overtimeHours: record.overtimeHours
+      };
+    });
+
+    res.json({
+      success: true,
+      data: {
+        totalWorkingDays: workingDays,
+        presentDays: presentDays,
+        absentDays: absentDays,
+        lateCount: lateCount,
+        attendancePercentage: parseFloat(attendancePercentage),
+        currentMonth: new Date(currentYear, currentMonth).toLocaleString('default', {
+          month: 'long',
+          year: 'numeric'
+        }),
+        attendanceRecords: attendanceRecords,
+        attendanceMap: attendanceMap
+      }
+    });
+  } catch (error) {
+    console.error('Get attendance stats error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching attendance statistics'
+    });
+  }
+};
+
+// @desc    Get attendance statistics for a specific month and year
+// @route   GET /api/attendance/stats/month/:year/:month
+// @access  Employee
+const getMonthAttendanceStats = async (req, res) => {
+  try {
+    const { year, month } = req.params;
+    const year_num = parseInt(year);
+    const month_num = parseInt(month) - 1; // Convert to 0-indexed
+
+    // Validate inputs
+    if (isNaN(year_num) || isNaN(month_num) || month_num < 0 || month_num > 11) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid year or month'
+      });
+    }
+
+    const monthStart = new Date(year_num, month_num, 1);
+    const monthEnd = new Date(year_num, month_num + 1, 0);
+    
+    // Add one day to monthEnd to include all records for the last day of month
+    const nextDay = new Date(monthEnd);
+    nextDay.setDate(nextDay.getDate() + 1);
+
+    // Fetch all attendance records for the employee in specified month
+    const attendanceRecords = await Attendance.find({
+      employee: req.user._id,
+      date: {
+        $gte: monthStart,
+        $lt: nextDay
+      }
+    }).sort({ date: 1 });
+
+    // Calculate working days (Mon-Fri only, no weekends)
+    let workingDays = 0;
+    let currentDate = new Date(monthStart);
+
+    while (currentDate <= monthEnd) {
+      const dayOfWeek = currentDate.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        workingDays++;
+      }
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    // Count present days
+    const presentDays = attendanceRecords.filter(
+      record => record.status === 'Present' || record.status === 'Late'
+    ).length;
+
+    // Count absent days
+    const absentDays = attendanceRecords.filter(
+      record => record.status === 'Absent'
+    ).length;
+
+    // Count late arrivals
+    const lateCount = attendanceRecords.filter(
+      record => record.status === 'Late'
+    ).length;
+
+    // Calculate attendance percentage
+    const attendancePercentage = workingDays > 0 
+      ? ((presentDays / workingDays) * 100).toFixed(2)
+      : 0;
+
+    // Create attendance map for calendar
+    const attendanceMap = {};
+    attendanceRecords.forEach(record => {
+      const dateKey = new Date(record.date).toISOString().split('T')[0];
+      attendanceMap[dateKey] = {
+        status: record.status,
+        loginTime: record.loginTime,
+        logoutTime: record.logoutTime,
+        overtimeHours: record.overtimeHours
+      };
+    });
+
+    res.json({
+      success: true,
+      data: {
+        totalWorkingDays: workingDays,
+        presentDays: presentDays,
+        absentDays: absentDays,
+        lateCount: lateCount,
+        attendancePercentage: parseFloat(attendancePercentage),
+        month: new Date(year_num, month_num).toLocaleString('default', {
+          month: 'long',
+          year: 'numeric'
+        }),
+        attendanceRecords: attendanceRecords,
+        attendanceMap: attendanceMap
+      }
+    });
+  } catch (error) {
+    console.error('Get month attendance stats error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching attendance statistics'
+    });
+  }
+};
+
 module.exports = {
   getAllAttendance,
   getMyAttendance,
   clockIn,
   clockOut,
-  getDashboardStats
+  getDashboardStats,
+  getMyAttendanceStats,
+  getMonthAttendanceStats
 };

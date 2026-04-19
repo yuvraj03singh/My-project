@@ -41,7 +41,7 @@ body {
   font-size: 20px;
   font-weight: 700;
   color: var(--text-primary);
-  margin: 0 0 32px 0;
+  margin: -2px 0px 34px 38px;
 }
 
 .sidebar-workspace {
@@ -175,7 +175,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 40px;
+  padding: 18px 40px;
   border-bottom: 1px solid var(--border);
 }
 

@@ -74,12 +74,15 @@ body {
 }
 
 .nav-signin {
-  color: var(--gray-text);
+  color: white;
   text-decoration: none;
   font-size: 0.9rem;
   font-weight: 500;
   transition: color 0.3s ease;
   cursor: pointer;
+  background-color: #0033aa;
+  padding: 10px;
+  border-radius: 6px;
 }
 
 .nav-signin:hover {
@@ -87,15 +90,15 @@ body {
 }
 
 .nav-btn {
-  background-color: var(--primary-blue);
-  color: var(--white);
-  padding: 0.5rem 1.25rem;
+  background-color:blue;
+  color: white;
+  padding: 10px;
   border-radius: 4px;
   text-decoration: none;
   font-size: 0.9rem;
   font-weight: 600;
   transition: all 0.3s ease;
-  border: none;
+  border-radius: 6px;
   cursor: pointer;
 }
 

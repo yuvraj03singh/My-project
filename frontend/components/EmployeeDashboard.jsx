@@ -18,6 +18,7 @@ export default function EmployeeDashboard() {
   const [clockOutTime, setClockOutTime] = useState(null);
   const [logoutStatus, setLogoutStatus] = useState(null); // 'early' or 'overtime'
   const [overtimeHours, setOvertimeHours] = useState(0);
+  const [attendancePercentage, setAttendancePercentage] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,7 +29,20 @@ export default function EmployeeDashboard() {
     if (storedName) setEmployeeName(storedName);
 
     checkAttendanceStatus();
+    fetchAttendanceStats();
   }, []);
+
+  const fetchAttendanceStats = async () => {
+    try {
+      const res = await api.get('/attendance/stats/me');
+      if (res.data.success) {
+        setAttendancePercentage(res.data.data.attendancePercentage);
+      }
+    } catch (err) {
+      console.error('Error fetching attendance stats:', err);
+      setAttendancePercentage(0);
+    }
+  };
 
   // Session timer - only runs when clocked in
   useEffect(() => {
@@ -106,6 +120,8 @@ export default function EmployeeDashboard() {
         setClockOutTime(null); // Reset logout time
         setLogoutStatus(null); // Reset logout status
         alert('Clocked in successfully!');
+        // Refresh stats
+        setTimeout(() => fetchAttendanceStats(), 500);
       }
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to clock in');
@@ -134,7 +150,10 @@ export default function EmployeeDashboard() {
         alert(`Clocked out successfully! Status: ${res.data.data.logoutStatus}`);
         
         // Refresh attendance data
-        setTimeout(() => checkAttendanceStatus(), 500);
+        setTimeout(() => {
+          checkAttendanceStatus();
+          fetchAttendanceStats();
+        }, 500);
       }
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to clock out');
@@ -174,7 +193,7 @@ export default function EmployeeDashboard() {
               <LayoutDashboard size={18} />
               My Dashboard
             </a>
-            <a href="#" className="emp-nav-item">
+            <a href="/my-attendance" className="emp-nav-item">
               <Calendar size={18} />
               My Attendance
             </a>
@@ -240,7 +259,7 @@ export default function EmployeeDashboard() {
                   <div className="card-title">
                     Attendance Rate <BarChart2 size={16} />
                   </div>
-                  <div className="attendance-value">96%</div>
+                  <div className="attendance-value">{attendancePercentage}%</div>
                   <div className="attendance-month">MONTH TO DATE</div>
                 </div>
 

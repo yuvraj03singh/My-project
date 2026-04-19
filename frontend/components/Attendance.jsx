@@ -10,6 +10,7 @@ import '../css/Attendance.css';
 export default function Attendance() {
   const navigate = useNavigate();
   const [attendance, setAttendance] = useState([]);
+  const [filteredAttendance, setFilteredAttendance] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     onTimeRate: 0,
@@ -17,12 +18,19 @@ export default function Attendance() {
     totalCount: 0
   });
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('');
   const adminName = localStorage.getItem('adminName') || 'Director';
   const employeeId = localStorage.getItem('employeeId') || '';
 
   useEffect(() => {
     fetchAttendance();
   }, []);
+
+  useEffect(() => {
+    applyFilters();
+  }, [attendance, searchTerm, selectedDate, selectedStatus]);
 
   const fetchAttendance = async () => {
     setLoading(true);
@@ -58,6 +66,55 @@ export default function Attendance() {
 
   const getInitials = (name) => {
     return name ? name.split(' ').map(n => n[0]).join('').toUpperCase() : '??';
+  };
+
+  const applyFilters = () => {
+    let filtered = [...attendance];
+
+    // Filter by search term (name or employee ID)
+    if (searchTerm.trim()) {
+      filtered = filtered.filter(log => {
+        const fullName = log.employee?.fullName || '';
+        const empId = log.employee?.employeeId || '';
+        const searchLower = searchTerm.toLowerCase();
+        return fullName.toLowerCase().includes(searchLower) || 
+               empId.toLowerCase().includes(searchLower);
+      });
+    }
+
+    // Filter by date
+    if (selectedDate) {
+      filtered = filtered.filter(log => {
+        const logDate = new Date(log.date).toISOString().split('T')[0];
+        return logDate === selectedDate;
+      });
+    }
+
+    // Filter by status
+    if (selectedStatus) {
+      filtered = filtered.filter(log => log.status === selectedStatus);
+    }
+
+    setFilteredAttendance(filtered);
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleDateChange = (e) => {
+    setSelectedDate(e.target.value);
+  };
+
+  const handleStatusChange = (e) => {
+    setSelectedStatus(e.target.value);
+  };
+
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setSelectedDate('');
+    setSelectedStatus('');
+    setFilteredAttendance(attendance);
   };
 
   return (
@@ -111,6 +168,11 @@ export default function Attendance() {
           <div>
             <h1 className="page-title">Attendance Log</h1>
             <p className="page-subtitle">Monitor employee daily active hours and punctuality across departments.</p>
+            {(searchTerm || selectedDate || selectedStatus) && (
+              <p style={{fontSize: '12px', color: '#ef4444', marginTop: '8px'}}>
+                ⚠️ Filters applied ({(searchTerm ? 1 : 0) + (selectedDate ? 1 : 0) + (selectedStatus ? 1 : 0)} active)
+              </p>
+            )}
           </div>
           <button className="export-btn">
             <Download size={16} /> Export CSV
@@ -139,28 +201,40 @@ export default function Attendance() {
             <label>EMPLOYEE SEARCH</label>
             <div className="input-with-icon">
               <Search size={16} />
-              <input type="text" placeholder="Search by name or ID..." />
+              <input 
+                type="text" 
+                placeholder="Search by name or ID..." 
+                value={searchTerm}
+                onChange={handleSearchChange}
+              />
             </div>
           </div>
           <div className="filter-group">
             <label>SELECT DATE</label>
             <div className="input-with-icon">
-               <input type="date" />
+              <input 
+                type="date"
+                value={selectedDate}
+                onChange={handleDateChange}
+              />
             </div>
           </div>
           <div className="filter-group">
             <label>STATUS FILTER</label>
             <div className="select-wrapper">
-              <select>
-                <option>All Statuses</option>
-                <option>Present</option>
-                <option>Late</option>
-                <option>Absent</option>
+              <select
+                value={selectedStatus}
+                onChange={handleStatusChange}
+              >
+                <option value="">All Statuses</option>
+                <option value="Present">Present</option>
+                <option value="Late">Late</option>
+                <option value="Absent">Absent</option>
               </select>
             </div>
           </div>
-          <button className="apply-filters-btn">
-            <Filter size={16} /> Apply Filters
+          <button className="apply-filters-btn" onClick={handleClearFilters}>
+            <Filter size={16} /> Clear Filters
           </button>
         </div>
 
@@ -184,8 +258,8 @@ export default function Attendance() {
                 </tr>
               </thead>
               <tbody>
-                {attendance.length > 0 ? (
-                  attendance.map((log) => (
+                {filteredAttendance.length > 0 ? (
+                  filteredAttendance.map((log) => (
                     <tr key={log._id}>
                       <td>
                         <div className="employee-info">
@@ -237,7 +311,9 @@ export default function Attendance() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="6" className="no-data">No attendance records found for today.</td>
+                    <td colSpan="6" className="no-data">
+                      {attendance.length === 0 ? 'No attendance records found.' : 'No records match your filters.'}
+                    </td>
                   </tr>
                 )}
               </tbody>
@@ -245,7 +321,7 @@ export default function Attendance() {
           )}
           
           <div className="pagination">
-            <span className="page-info">Showing {attendance.length} entries</span>
+            <span className="page-info">Showing {filteredAttendance.length} of {attendance.length} entries</span>
             <div className="page-controls">
               <button className="page-btn"><ChevronLeft size={16} /></button>
               <button className="page-btn active">1</button>

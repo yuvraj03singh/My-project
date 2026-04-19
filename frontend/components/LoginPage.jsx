@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, ArrowRight, AlertCircle, Loader } from 'lucide-react';
+import { Mail, Lock, ArrowRight, AlertCircle, Loader, ArrowLeft } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import '../css/LoginPage.css';
@@ -138,6 +138,13 @@ export default function LoginPage() {
     <div className="login-page">
       {/* Outer Card */}
       <div className="login-card">
+        <button 
+          onClick={() => navigate('/')}
+          className="back-button"
+          title="Go back to landing page"
+        >
+          <ArrowLeft size={20} />
+        </button>
         
         <Header />
 
