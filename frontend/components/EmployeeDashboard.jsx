@@ -7,6 +7,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import '../css/EmployeeDashboard.css';
+import NewLeaveRequest from './NewLeaveRequest';
 
 export default function EmployeeDashboard() {
   const navigate = useNavigate();
@@ -209,9 +210,9 @@ export default function EmployeeDashboard() {
             <div className="emp-menu-divider"></div>
           </nav>
 
-          <button className="emp-btn-primary">
-            <Plus size={18} /> New Request
-          </button>
+          <div className="emp-btn-primary">
+            <NewLeaveRequest onRequestSubmitted={() => { checkAttendanceStatus(); fetchAttendanceStats(); }} />
+          </div>
 
           <div className="emp-nav-footer">
             <a href="#" className="emp-nav-item">
